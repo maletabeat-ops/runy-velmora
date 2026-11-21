@@ -23,7 +23,7 @@ function hud(){
   c.sk.forEach((s,i)=>{const b=slotEls['s'+i];b.classList.toggle('locked',P.lvl<s.lv);b.classList.toggle('nomana',P.mp<s.mp);b.querySelector('.cd').style.height=(P.scd[i]/s.cd*100)+'%'});
   ['hp','mp'].forEach(k=>{const b=slotEls[k];b.querySelector('.n').textContent=P.pots[k];b.classList.toggle('locked',P.pots[k]<=0);b.querySelector('.cd').style.height=(P.cd.pot*100)+'%'});
   const left=SHRINES.filter(s=>!s.done).length;
-  const q=G.won?['Вельмор спасён','Ищи легендарные вещи в сундуках и у боссов']:G.quest===0?['Задание','Поговори со старейшиной Ольвеном']:left?[`Руны: ${3-left} из 3`,'Святилища мигают на карте']:['Склеп открыт','Склеп на юго-востоке, за кладбищем'];
+  const q=G.won?['Вельмор спасён','Ищи легендарные вещи в сундуках и у боссов']:G.quest===0?['Задание','Поговори со старейшиной Ольвеном']:left?[`Руны: ${SHRINES.length-left} из ${SHRINES.length}`,'Святилища мигают на карте']:['Склеп открыт','Склеп на юго-востоке, за кладбищем'];
   const b=P.bounty,B=BOUNTIES[b.i];const bq=b.active&&B?`${B.t}: ${Math.min(b.prog,B.n)} / ${B.n}`:'';
   const qs=q.join('|')+bq;if(qs!==lastQ){lastQ=qs;const Q=$('quest');Q.innerHTML='';Q.append(el('small','',q[0]),q[1]);if(bq){Q.append(el('small','b','Охота'),bq)}}
   const bo=G.boss&&!G.boss.dead?G.boss:null;$('boss').hidden=!bo;if(bo){$('bossN').textContent=bo.f.n;$('bossF').style.width=(Math.max(0,bo.hp)/bo.maxHp*100)+'%'}
@@ -32,7 +32,7 @@ function drawMini(m,s){m.imageSmoothingEnabled=false;m.drawImage(mmBase,0,0,W*s,
   const mark=(x,y,c,z=3)=>{if(!explored[y*W+x]&&s===1)return;m.fillStyle=c;m.fillRect((x-1)*s,(y-1)*s,z*s,z*s)};
   SHRINES.forEach(sh=>{if(!sh.done&&(bl||s>1))mark(sh.x,sh.y,sh.col)});
   if(s>1)CHESTS.forEach(c=>{if(!c.open&&explored[c.ty*W+c.tx])mark(c.tx,c.ty,'#f2c14e',2)});
-  if(G.quest===0&&bl){m.fillStyle='#f2c14e';m.fillRect(44*s,34*s,3*s,3*s)}
+  if(G.quest===0&&bl){m.fillStyle='#f2c14e';m.fillRect(64*s,49*s,3*s,3*s)}
   if(G.gateOpen&&!G.won&&(bl||s>1)){m.fillStyle='#c48aff';m.fillRect((GATE.x-1)*s,(GATE.y-1)*s,3*s,3*s)}
   m.fillStyle='#fff';m.fillRect(((P.x/16|0)-1)*s,((P.y/16|0)-1)*s,2*s+1,2*s+1)}
 
@@ -84,19 +84,6 @@ function equip(i){const it=P.bag[i];if(it.slot==='weapon'&&it.cls!==P.cls)return
 function openMap(){G.state='menu';$('ovMap').hidden=false;const c=$('bigmap'),m=c.getContext('2d');m.clearRect(0,0,c.width,c.height);drawMini(m,4);
   const L=$('mapLabels');L.innerHTML='';REGIONS.forEach((R,i)=>{const[x,y]=R.lab;if(!explored[y*W+x]&&i!==1)return;const d=el('div','mlab',`${R.n}${R.lv?`<small>ур. ${R.lv[0]}–${R.lv[1]}</small>`:''}`);d.style.left=(x/W*100)+'%';d.style.top=(y/H*100)+'%';L.appendChild(d)})}
 
-/* ----- title & class select ----- */
-function buildTitle(){const box=$('cards');box.innerHTML='';const sv=loadSave();
-  if(sv){$('contWrap').hidden=false;$('bCont').textContent=`Продолжить: ${CLS[sv.cls].n}, ур. ${sv.lvl}`}
-  Object.keys(CLS).forEach(k=>{const c=CLS[k],card=el('div','ccard pnl');
-    const img=el('img','cimg');img.src=bigURL(SPR[c.spr],5);img.alt=c.n;
-    const pips=Object.entries({hp:'Здоровье',mp:'Мана',atk:'Оружие',mag:'Магия'}).map(([p,n])=>`<div class="pip"><span>${n}</span><i>${'<b></b>'.repeat(c.pips[p])}${'<b class="o"></b>'.repeat(3-c.pips[p])}</i></div>`).join('');
-    card.innerHTML=`<h3>${c.n}</h3><p class="cd">${c.d}</p><div class="pips">${pips}</div><ul class="sks">${c.sk.map(s=>`<li><span style="color:${s.col}">${s.ic}</span> ${s.n} <small>ур. ${s.lv}</small></li>`).join('')}</ul>`;
-    card.prepend(img);const b=el('button','btn','Выбрать');let armed=false;
-    b.addEventListener('click',()=>{if(sv&&!armed){armed=true;b.textContent='Точно? Сохранение пропадёт';b.classList.add('warn');return}startGame(k)});card.appendChild(b);box.appendChild(card)})}
-function audioOn(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume()}catch(_){}}
-function startGame(cls,sv){audioOn();if(sv)applySave(sv);else{newGame(cls)}
-  $('ovTitle').hidden=true;$('hud').hidden=false;buildHotbar();lastQ='';lastR='';G.state='play';G.cx=P.x-VW/2;G.cy=P.y-VH/2;
-  if(!sv){save();setTimeout(()=>toast('Поговори со старейшиной Ольвеном. Подойди и нажми E'),400)}else toast('С возвращением в Вельмор!')}
 function showWin(){G.state='win';const m=Math.floor(G.time/60),s=Math.floor(G.time%60);const ws=$('winStats');ws.innerHTML='';
   [[m+':'+String(s).padStart(2,'0'),'время'],[P.lvl,'уровень'],[G.kills,'побеждено'],[P.gold,'золота']].forEach(([v,l])=>{const d=el('div','',String(v));d.appendChild(el('span','',l));ws.appendChild(d)});$('ovWin').hidden=false}
 
@@ -127,27 +114,15 @@ cv.addEventListener('pointerup',jEnd);cv.addEventListener('pointercancel',jEnd);
 $('dlg').addEventListener('pointerdown',e=>{e.preventDefault();advance()});
 $('bBag').addEventListener('click',()=>{if(G.state==='play')openInv()});$('bMap').addEventListener('click',()=>{if(G.state==='play')openMap()});
 $('invClose').addEventListener('click',closeOv);$('mapClose').addEventListener('click',closeOv);
-$('bCont').addEventListener('click',()=>{const sv=loadSave();if(sv)startGame(sv.cls,sv)});
 $('bRespawn').addEventListener('click',respawn);
 $('bRoam').addEventListener('click',()=>{$('ovWin').hidden=true;G.state='play'});
-$('bRestart').addEventListener('click',()=>{$('ovWin').hidden=true;$('hud').hidden=true;G.state='title';$('ovTitle').hidden=false;buildTitle()});
-
-/* ----- fullscreen ----- */
-function toggleFull(){const d=document,r=d.documentElement;try{
-  if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d);return}
-  const f=r.requestFullscreen||r.webkitRequestFullscreen;if(!f)throw 0;const p=f.call(r,{navigationUI:'hide'});if(p&&p.catch)p.catch(()=>fullFail());
-  try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})}catch(_){}}catch(_){fullFail()}}
-function fullFail(){toast('Браузер не дал включить полный экран. Попробуй F11 или открой игру отдельным файлом')}
-$('bFull').addEventListener('click',toggleFull);$('bFull2').addEventListener('click',toggleFull);
-addEventListener('keydown',e=>{if(e.code==='KeyF'&&!e.repeat&&!capture&&!codeActs('KeyF').length&&(G.state==='play'||G.state==='title'))toggleFull()});
-document.addEventListener('fullscreenchange',()=>setTimeout(resize,50));
 
 /* ----- boot ----- */
-resize();genMap();renderWorld();buildMM();buildTitle();
+resize();genMap();renderWorld();buildMM();
 let lastT=performance.now(),titleCam=0;
-function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(typeof musicTick==="function")musicTick(dt);
   if(G.state==='play')update(dt);else if(G.state==='dialog'){tickDialog(dt);updateMisc(0)}
-  if(G.state==='title'){titleCam+=dt*14;ctx.fillStyle='#0f0d14';ctx.fillRect(0,0,VW,VH);const x=clamp(300+titleCam%900,0,WW-VW),y=clamp(420,0,WH-VH);ctx.drawImage(worldCv,x,y,VW,VH,0,0,VW,VH);ctx.drawImage(vg,0,0)}
+  if(G.state==='title'){titleCam+=dt*14;ctx.fillStyle='#0f0d14';ctx.fillRect(0,0,VW,VH);const x=clamp(500+titleCam%1200,0,WW-VW),y=clamp(640,0,WH-VH);ctx.drawImage(worldCv,x,y,VW,VH,0,0,VW,VH);ctx.drawImage(vg,0,0)}
   else{render(dt);if(P&&G.state!=='win')hud()}
   actQ.clear();requestAnimationFrame(frame)}
 requestAnimationFrame(frame);

@@ -3,18 +3,18 @@
 const G={state:'title',time:0,quest:0,shake:0,spawnT:0,kills:0,gateOpen:false,bossSpawned:false,won:false,winT:0,dark:0,near:null,cx:0,cy:0,smoke:0,mouseT:-99,mx:0,my:0,boss:null,regionCur:-1,saveT:0,fogT:0,amb:0};
 let P=null,enemies=[],proj=[],pickups=[],parts=[],texts=[],rings=[],bolts=[],warns=[],zones=[],trails=[],SHRINES=[],NPCS=[],CHESTS=[];
 const SK='velmor2_save';
-const xpNeed=l=>Math.round(25*Math.pow(l,1.5));
+const xpNeed=l=>Math.round(35*Math.pow(l,1.7));const MAXLV=30;
 const ecy=e=>e.y-(e.f.big?12:4);
 const regLv=ri=>{const R=REGIONS[ri];return R&&R.lv?Math.round((R.lv[0]+R.lv[1])/2):2};
 
-function newGame(cls){
+function newGame(cls,race){
   genMap();renderWorld();buildMM();resetFog();
-  P={cls,x:SPAWN.x,y:SPAWN.y,r:5,lvl:1,xp:0,gold:20,hp:1,mp:1,fx:1,fy:0,fl:false,cd:{atk:0,pot:0},scd:[0,0,0,0],inv:0,swing:null,kx:0,ky:0,moving:false,anim:0,dash:0,dhit:null,buff:0,slowT:0,poison:0,pdps:0,ptk:0,denyT:0,
-    bag:[],eq:{weapon:starterWeapon(cls),armor:null,amulet:null,ring:null},pots:{hp:3,mp:2},runes:{frost:false,fire:false,life:false},bounty:{i:0,active:false,prog:0},stock:[],stockLvl:0};
+  P={cls,race:race||'human',hitN:0,gcd:0,emberT:0,x:SPAWN.x,y:SPAWN.y,r:5,lvl:1,xp:0,gold:20,hp:1,mp:1,fx:1,fy:0,fl:false,cd:{atk:0,pot:0},scd:[0,0,0,0],inv:0,swing:null,kx:0,ky:0,moving:false,anim:0,dash:0,dhit:null,buff:0,slowT:0,poison:0,pdps:0,ptk:0,denyT:0,
+    bag:[],eq:{weapon:starterWeapon(cls),armor:null,amulet:null,ring:null},pots:{hp:3,mp:2},runes:{frost:false,fire:false,life:false,storm:false,shadow:false},bounty:{i:0,active:false,prog:0},stock:[],stockLvl:0};
   recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp;
   enemies=[];proj=[];pickups=[];parts=[];texts=[];rings=[];bolts=[];warns=[];zones=[];trails=[];
   SHRINES=SHRINE_DEF.map(s=>({...s,done:false,active:false}));
-  NPCS=[{id:'elder',name:'Ольвен',x:720,y:568,spr:'elder'},{id:'smith',name:'Брам',x:880,y:568,spr:'smith'},{id:'herb',name:'Ива',x:720,y:696,spr:'herb'},{id:'tara',name:'Тара',x:880,y:696,spr:'tara'}];
+  NPCS=[{id:'elder',name:'Ольвен',x:1040,y:808,spr:'elder'},{id:'smith',name:'Брам',x:1200,y:808,spr:'smith'},{id:'herb',name:'Ива',x:1040,y:936,spr:'herb'},{id:'tara',name:'Тара',x:1200,y:936,spr:'tara'}];
   CHESTS=CHEST_POS.map(([x,y])=>({tx:x,ty:y,x:x*16+8,y:y*16+12,open:false,lvl:regLv(RG(x,y))}));
   Object.assign(G,{time:0,quest:0,shake:0,spawnT:2,kills:0,gateOpen:false,bossSpawned:false,won:false,winT:0,dark:0,near:null,boss:null,regionCur:-1,saveT:0});
   G.cx=P.x-VW/2;G.cy=P.y-VH/2;reveal(P.x/16|0,P.y/16|0,9);
@@ -24,12 +24,12 @@ function populate(){REGIONS.forEach((R,ri)=>{if(!R.cap)return;for(let i=0;i<R.ca
 function spawnInRegion(ri,minD){const R=REGIONS[ri];
   for(let i=0;i<60;i++){const tx=2+rint(W-4),ty=2+rint(H-4);if(RG(tx,ty)!==ri||SOLID.has(at(tx,ty))||inVil(tx,ty))continue;
     const x=tx*16+8,y=ty*16+8;if(Math.hypot(x-P.x,y-P.y)<minD||blocked(x,y,6,'e'))continue;
-    const type=pickW(R.foes),lvl=R.lv[0]+rint(R.lv[1]-R.lv[0]+1),el=Math.random()<.07;
+    const type=pickW(R.foes),lvl=R.lv[0]+rint(R.lv[1]-R.lv[0]+1),el=Math.random()<.1;
     spawn(type,x,y,{lvl,elite:el,reg:ri});
     if(FOES[type].pack)for(let k=0;k<1+rint(2);k++){const ax=x+rr(20),ay=y+rr(20);if(!blocked(ax,ay,6,'e'))spawn(type,ax,ay,{lvl,reg:ri})}
     return true}return false}
 function spawn(type,x,y,o={}){const f=FOES[type],lvl=o.lvl||1,el=!!o.elite;
-  const hs=f.boss?1:(1+.38*(lvl-1)),ds=f.boss?1:(1+.24*(lvl-1));
+  const hs=f.boss?1:(1+.45*(lvl-1)),ds=f.boss?1:(1+.3*(lvl-1));
   const e={type,f,x,y,r:f.small?4:f.r,lvl,elite:el,hp:Math.round(f.hp*hs*(el?2.6:1)),dmg:Math.round(f.dmg*ds*(el?1.3:1)),spd:f.spd*(el?1.1:1),xp:Math.round(f.xp*(f.boss?1:lvl)*(el?3:1)),
     kx:0,ky:0,flash:0,slow:0,slowF:.45,poison:0,pdps:0,ptk:0,cd:1+Math.random(),acd:0,sc:6,tp:4,wind:0,leap:0,t:Math.random()*3,wt:0,wdir:null,fl:false,ag:false,
     wave:o.wave||null,reg:o.reg??-1,side:Math.random()<.5?-1:1,hx:x,hy:y};
@@ -37,12 +37,14 @@ function spawn(type,x,y,o={}){const f=FOES[type],lvl=o.lvl||1,el=!!o.elite;
 
 /* ----- stats ----- */
 function recalc(){const c=CLS[P.cls];
-  const S={maxHp:c.hp+c.hpL*(P.lvl-1),maxMp:c.mp+c.mpL*(P.lvl-1),armor:c.armor+c.armL*(P.lvl-1),sp:c.sp*(1+.1*(P.lvl-1)),wdmg:2,dmgP:0,spP:0,crit:c.crit,as:0,ms:0,mpr:c.mpr+P.lvl*.05,ls:0,fx:new Set()};
+  const S={maxHp:c.hp+c.hpL*(P.lvl-1),maxMp:c.mp+c.mpL*(P.lvl-1),armor:c.armor+c.armL*(P.lvl-1),sp:c.sp*(1+.06*(P.lvl-1)),wdmg:2,dmgP:0,spP:0,crit:c.crit,as:0,ms:0,mpr:c.mpr+P.lvl*.04,ls:0,dodge:0,fx:new Set()};
+  const rb=(RACES[P.race]||RACES.human).b;S.dmgP+=rb.dmgP||0;S.crit+=rb.crit||0;S.ms+=rb.ms||0;S.armor+=rb.armor||0;S.dodge+=rb.dodge||0;
   for(const s of SLOTS){const it=P.eq[s];if(!it)continue;if(it.dmg)S.wdmg=it.dmg;if(it.armor)S.armor+=it.armor;
     for(const k in it.af){const v=it.af[k];if(k==='hp')S.maxHp+=v;else if(k==='mp')S.maxMp+=v;else S[k]+=v}if(it.fx)S.fx.add(it.fx)}
-  if(P.runes.life)S.maxHp*=1.2;if(P.runes.fire)S.dmgP+=15;
+  if(P.runes.life)S.maxHp*=1.15;if(P.runes.fire)S.dmgP+=12;if(P.runes.storm){S.as+=10;S.ms+=5}if(P.runes.shadow){S.crit+=6;S.dodge+=4}
+  S.maxHp*=1+(rb.hpP||0)/100;S.maxMp*=1+(rb.mpP||0)/100;
   if(P.buff>0){S.dmgP+=40;S.armor+=10}
-  S.wdmg*=1+.06*(P.lvl-1);S.sp*=1+S.spP/100;
+  S.wdmg*=1+.035*(P.lvl-1);S.sp*=1+S.spP/100;
   S.maxHp=Math.round(S.maxHp);S.maxMp=Math.round(S.maxMp);S.armor=Math.round(S.armor);
   P.S=S;P.hp=Math.min(P.hp,S.maxHp);P.mp=Math.min(P.mp,S.maxMp)}
 
@@ -64,10 +66,11 @@ function dealDamage(e,amt,kind,dx=0,dy=0){
   if(S.ls&&kind!=='dot')P.hp=Math.min(S.maxHp,P.hp+d*S.ls/100);
   if(P.runes.frost&&kind!=='dot'&&Math.random()<.2)e.slow=Math.max(e.slow,1.5);
   if(kind==='melee'&&P.cls==='warrior')P.mp=Math.min(S.maxMp,P.mp+1);
+  if(S.fx.has('storm')&&(kind==='melee'||kind==='proj')&&++P.hitN%5===0){let b=null,bd=90;for(const o of enemies){if(o===e||o.dead)continue;const dd=Math.hypot(o.x-e.x,o.y-e.y);if(dd<bd){bd=dd;b=o}}if(b){bolts.push({pts:[{x:e.x,y:ecy(e)},{x:b.x,y:ecy(b)}],life:.25});sfx('zap');setTimeout(()=>dealDamage(b,S.wdmg*.8,'spell'),0)}}
   if(e.hp<=0)kill(e)}
 function hurtPlayer(d,ux,uy,src){
-  if(P.inv>0||P.dash>0||G.state!=='play')return false;const red=P.S.armor/(P.S.armor+50);const dd=Math.max(1,Math.round(d*(1-red)));
-  P.hp-=dd;P.inv=.5;P.kx=ux*150;P.ky=uy*150;G.shake=.22;sfx('hurt');text(P.x,P.y-20,'-'+dd,'#ff6a5a');burst(P.x,P.y-6,'#e0402e',6,50,.4);
+  if(P.inv>0||P.dash>0||G.state!=='play')return false;if(Math.random()*100<P.S.dodge){P.inv=.25;text(P.x,P.y-22,'уворот','#e8e4da');return false}const red=P.S.armor/(P.S.armor+80);const dd=Math.max(1,Math.round(d*(1-red)));
+  P.hp-=dd;P.inv=.4;if(src&&src._e&&src._e.f.chill)P.slowT=Math.max(P.slowT,1);P.kx=ux*150;P.ky=uy*150;G.shake=.22;sfx('hurt');text(P.x,P.y-20,'-'+dd,'#ff6a5a');burst(P.x,P.y-6,'#e0402e',6,50,.4);
   if(src&&src.melee&&P.S.fx.has('thorns')&&src._e&&!src._e.dead)dealDamage(src._e,dd*.4,'dot');
   if(P.hp<=0){P.hp=0;die()}return true}
 function kill(e){if(e.dead)return;e.dead=true;G.kills++;
@@ -80,13 +83,13 @@ function kill(e){if(e.dead)return;e.dead=true;G.kills++;
 function loot(e){const lv=e.lvl,boss=e.f.boss;
   const g=Math.round((1+Math.random()*2)*lv*(e.elite?3:1)*(boss?12:1));const piles=boss?6:1+rint(2);
   for(let i=0;i<piles;i++)pickups.push({k:'gold',v:Math.max(1,Math.round(g/piles)),x:e.x+rr(8),y:e.y+rr(6),t:0});
-  if(Math.random()<.06||boss)pickups.push({k:'pot',kind:'hp',x:e.x+rr(6),y:e.y+rr(6),t:0});
-  if(Math.random()<.06||boss)pickups.push({k:'pot',kind:'mp',x:e.x+rr(6),y:e.y+rr(6),t:0});
+  if(Math.random()<.04||boss)pickups.push({k:'pot',kind:'hp',x:e.x+rr(6),y:e.y+rr(6),t:0});
+  if(Math.random()<.04||boss)pickups.push({k:'pot',kind:'mp',x:e.x+rr(6),y:e.y+rr(6),t:0});
   if(boss){dropItem(genItem(lv,{bias:2,minRar:3,src:e.type}),e.x,e.y);dropItem(genItem(lv,{bias:2,minRar:2}),e.x,e.y);dropItem(genItem(lv,{bias:1}),e.x,e.y);
     if(e.type==='lich')dropItem(genItem(lv,{rarity:4,slot:'ring',src:'lich'}),e.x,e.y)}
   else if(Math.random()<(e.elite?.65:.11))dropItem(genItem(lv,{bias:e.elite?1:0}),e.x,e.y)}
 function dropItem(it,x,y){pickups.push({k:'item',it,x:x+rr(12),y:y+rr(10),t:0});if(it.rar===4)sfx('legend')}
-function gainXp(n){if(P.lvl>=25)return;P.xp+=n;while(P.xp>=xpNeed(P.lvl)&&P.lvl<25){P.xp-=xpNeed(P.lvl);P.lvl++;recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp;
+function gainXp(n){if(P.lvl>=MAXLV)return;P.xp+=n;while(P.xp>=xpNeed(P.lvl)&&P.lvl<MAXLV){P.xp-=xpNeed(P.lvl);P.lvl++;recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp;
   burst(P.x,P.y-6,'#f2c14e',26,80,.8);text(P.x,P.y-28,'НОВЫЙ УРОВЕНЬ','#f2c14e',true);sfx('lvl');
   const sk=CLS[P.cls].sk.find(s=>s.lv===P.lvl);toast(sk?`Уровень ${P.lvl}! Новое умение: ${sk.n}`:`Уровень ${P.lvl}! Ты стал сильнее.`);save()}}
 
@@ -107,14 +110,14 @@ function melee(range,dotMin,dmg,a){for(const e of enemies){if(e.dead)continue;co
   if(d<range+e.r){const dot=(dx*a.x+dy*a.y)/d;if(dot>dotMin||d<11)dealDamage(e,dmg,'melee',dx/d,dy/d)}}}
 function arrow(ang,dmg,o={}){const c=Math.cos(ang),s=Math.sin(ang),pierce=o.pierce||P.S.fx.has('pierce');
   proj.push({x:P.x+c*6,y:P.y-5+s*6,vx:c*240,vy:s*240,life:.85,owner:'p',kind:o.kind||'arrow',dmg,r:2,pierce,hit:new Set(),poison:o.poison,pdps:o.pdps,slow:P.S.fx.has('pierce')})}
-function basicAttack(){const S=P.S,as=1+S.as/100,a=aim();face(a);
+function basicAttack(){P.gcd=.2;const S=P.S,as=1+S.as/100,a=aim();face(a);
   if(P.cls==='mage'){P.cd.atk=.42/as;proj.push({x:P.x+a.x*8,y:P.y-8+a.y*6,vx:a.x*215,vy:a.y*215,life:.55,owner:'p',kind:'arcane',dmg:S.wdmg*(.7+.3*S.sp),r:3});sfx('zap')}
   else if(P.cls==='warrior'){P.cd.atk=.5/as;P.swing={t:.2,max:.2,r:17,w:1.5,a};melee(25,-.15,S.wdmg,a);sfx('swing');
     if(S.fx.has('wave'))proj.push({x:P.x+a.x*8,y:P.y-5+a.y*8,vx:a.x*200,vy:a.y*200,life:.5,owner:'p',kind:'wave',dmg:S.wdmg*.6,r:6,pierce:true,hit:new Set()})}
   else{P.cd.atk=.46/as;arrow(Math.atan2(a.y,a.x),S.wdmg);sfx('bow')}}
-function useSkill(i){const sk=CLS[P.cls].sk[i];if(!sk)return;if(P.lvl<sk.lv)return deny(`откроется на ${sk.lv} ур.`);if(P.scd[i]>0)return;
+function useSkill(i){const sk=CLS[P.cls].sk[i];if(!sk)return;if(P.lvl<sk.lv)return deny(`откроется на ${sk.lv} ур.`);if(P.scd[i]>0||P.gcd>0)return;
   const free=P.S.fx.has('freecast')&&Math.random()<.25;if(!free&&P.mp<sk.mp)return deny('мало маны');
-  if(SKILL[sk.id]()===false)return;if(!free)P.mp-=sk.mp;else text(P.x,P.y-26,'бесплатно!','#c48aff');P.scd[i]=sk.cd}
+  if(SKILL[sk.id]()===false)return;if(!free)P.mp-=sk.mp;else text(P.x,P.y-26,'бесплатно!','#c48aff');P.scd[i]=sk.cd;P.gcd=.35;P.cd.atk=Math.max(P.cd.atk,.3)}
 const SKILL={
   fireball(){const a=aim();face(a);sfx('fire');proj.push({x:P.x+a.x*6,y:P.y-5+a.y*6,vx:a.x*185,vy:a.y*185,life:1,owner:'p',kind:'fire',dmg:11*P.S.sp,r:3,aoe:24})},
   frostring(){sfx('nova');rings.push({x:P.x,y:P.y-4,r:4,max:58,life:.45,col:'150,235,255'});G.shake=.12;burst(P.x,P.y-4,'#8fe8ff',24,110,.5);
@@ -136,8 +139,8 @@ const SKILL={
   rain(){const t=targetPoint(160,80);zones.push({x:t.x,y:t.y,r:46,t:2.2,tick:0});sfx('bow')}
 };
 function usePotion(k){if(P.cd.pot>0)return;if(P.pots[k]<=0)return deny('нет зелий');
-  if(k==='hp'){if(P.hp>=P.S.maxHp)return deny('здоровье полное');const v=Math.round(P.S.maxHp*.45);P.hp=Math.min(P.S.maxHp,P.hp+v);text(P.x,P.y-22,'+'+v,'#ff8a7a');burst(P.x,P.y-6,'#ff8a7a',14,40,.6)}
-  else{if(P.mp>=P.S.maxMp)return deny('мана полная');const v=Math.round(P.S.maxMp*.5);P.mp=Math.min(P.S.maxMp,P.mp+v);text(P.x,P.y-22,'+'+v,'#8fb4ff');burst(P.x,P.y-6,'#8fb4ff',14,40,.6)}
+  if(k==='hp'){if(P.hp>=P.S.maxHp)return deny('здоровье полное');const v=Math.round(P.S.maxHp*.35);P.hp=Math.min(P.S.maxHp,P.hp+v);text(P.x,P.y-22,'+'+v,'#ff8a7a');burst(P.x,P.y-6,'#ff8a7a',14,40,.6)}
+  else{if(P.mp>=P.S.maxMp)return deny('мана полная');const v=Math.round(P.S.maxMp*.4);P.mp=Math.min(P.S.maxMp,P.mp+v);text(P.x,P.y-22,'+'+v,'#8fb4ff');burst(P.x,P.y-6,'#8fb4ff',14,40,.6)}
   P.pots[k]--;P.cd.pot=1;sfx('heal')}
 
 /* ----- collision ----- */
@@ -162,23 +165,24 @@ function updatePlayer(dt){
   else moveEnt(P,mx*sp*dt+P.kx*dt,my*sp*dt+P.ky*dt,'p');
   const dec=Math.min(1,dt*10);P.kx-=P.kx*dec;P.ky-=P.ky*dec;
   for(const k in P.cd)P.cd[k]=Math.max(0,P.cd[k]-dt);for(let i=0;i<4;i++)P.scd[i]=Math.max(0,P.scd[i]-dt);
-  P.inv-=dt;P.denyT-=dt;P.slowT-=dt;if(P.swing){P.swing.t-=dt;if(P.swing.t<=0)P.swing=null}
+  P.gcd-=dt;P.inv-=dt;P.denyT-=dt;P.slowT-=dt;if(P.swing){P.swing.t-=dt;if(P.swing.t<=0)P.swing=null}
   if(P.buff>0){P.buff-=dt;if(P.buff<=0)recalc()}
   if(P.poison>0){P.poison-=dt;P.ptk-=dt;if(P.ptk<=0){P.ptk=.5;P.hp-=P.pdps*.5;text(P.x,P.y-18,'-'+Math.ceil(P.pdps*.5),'#9fe060');if(P.hp<=0){P.hp=0;die();return}}}
   P.mp=Math.min(S.maxMp,P.mp+dt*S.mpr);
-  if(S.fx.has('heart'))P.hp=Math.min(S.maxHp,P.hp+dt*S.maxHp*.02);
-  if(P.runes.life)P.hp=Math.min(S.maxHp,P.hp+dt*1);
-  if(inVil(P.x/16|0,P.y/16|0)&&P.hp<S.maxHp){P.hp=Math.min(S.maxHp,P.hp+dt*(3+S.maxHp*.04));if(Math.random()<dt*3)parts.push({x:P.x+rr(6),y:P.y,vx:0,vy:-18,life:.6,max:.6,col:'#9fe08a',size:1,g:0})}
-  if((held('attack')||touchAtk||actQ.has('attack'))&&P.cd.atk<=0&&P.dash<=0)basicAttack();
-  for(let i=0;i<4;i++)if(actQ.has('skill'+i)||(held('skill'+i)&&P.scd[i]<=0&&P.lvl>=CLS[P.cls].sk[i].lv))useSkill(i);
+  if(S.fx.has('heart'))P.hp=Math.min(S.maxHp,P.hp+dt*S.maxHp*.015);
+  if(P.runes.life)P.hp=Math.min(S.maxHp,P.hp+dt*.6);
+  if(S.fx.has('ember')){P.emberT-=dt;if(P.emberT<=0){P.emberT=.5;forNear(P.x,P.y-4,34,e=>dealDamage(e,S.wdmg*.25+4,'dot'));if(Math.random()<.5)burst(P.x,P.y-4,'#ff9a3a',4,30,.4)}}
+  if(inVil(P.x/16|0,P.y/16|0)&&P.hp<S.maxHp){P.hp=Math.min(S.maxHp,P.hp+dt*(1.5+S.maxHp*.015));if(Math.random()<dt*3)parts.push({x:P.x+rr(6),y:P.y,vx:0,vy:-18,life:.6,max:.6,col:'#9fe08a',size:1,g:0})}
+  if((held('attack')||touchAtk||actQ.has('attack'))&&P.cd.atk<=0&&P.gcd<=0&&P.dash<=0)basicAttack();
+  for(let i=0;i<4;i++)if(actQ.has('skill'+i)||(held('skill'+i)&&P.scd[i]<=0&&P.gcd<=0&&P.lvl>=CLS[P.cls].sk[i].lv))useSkill(i);
   if(actQ.has('pot_hp'))usePotion('hp');if(actQ.has('pot_mp'))usePotion('mp');
 }
 
 /* ----- save / load ----- */
-function save(){if(!P||G.state==='title')return;try{localStorage.setItem(SK,JSON.stringify({v:2,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,bag:P.bag,eq:P.eq,pots:P.pots,runes:P.runes,bounty:P.bounty,stock:P.stock,stockLvl:P.stockLvl,
+function save(){if(!P||G.state==='title')return;try{localStorage.setItem(SK,JSON.stringify({v:3,cls:P.cls,race:P.race,lvl:P.lvl,xp:P.xp,gold:P.gold,bag:P.bag,eq:P.eq,pots:P.pots,runes:P.runes,bounty:P.bounty,stock:P.stock,stockLvl:P.stockLvl,
   quest:G.quest,gate:G.gateOpen,won:G.won,kills:G.kills,time:G.time,chests:CHESTS.map(c=>c.open?1:0).join(''),shrines:SHRINES.map(s=>s.done?1:0).join(''),fog:fogPack()}))}catch(_){}}
 function loadSave(){try{const s=localStorage.getItem(SK);return s?JSON.parse(s):null}catch(_){return null}}
-function applySave(d){newGame(d.cls);Object.assign(P,{lvl:d.lvl,xp:d.xp,gold:d.gold,bag:d.bag||[],eq:d.eq||P.eq,pots:d.pots||P.pots,runes:d.runes||P.runes,bounty:d.bounty||P.bounty,stock:d.stock||[],stockLvl:d.stockLvl||0});
+function applySave(d){newGame(d.cls,d.race);Object.assign(P,{lvl:d.lvl,xp:d.xp,gold:d.gold,bag:d.bag||[],eq:d.eq||P.eq,pots:d.pots||P.pots,runes:d.runes||P.runes,bounty:d.bounty||P.bounty,stock:d.stock||[],stockLvl:d.stockLvl||0});
   Object.assign(G,{quest:d.quest||0,won:!!d.won,kills:d.kills||0,time:d.time||0});
   (d.chests||'').split('').forEach((v,i)=>{if(CHESTS[i])CHESTS[i].open=v==='1'});(d.shrines||'').split('').forEach((v,i)=>{if(SHRINES[i])SHRINES[i].done=v==='1'});
-  if(d.fog)fogUnpack(d.fog);if(d.gate)openGate(true);recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp}
+  if(d.fog&&d.v>=3)fogUnpack(d.fog);if(d.gate)openGate(true);recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp}

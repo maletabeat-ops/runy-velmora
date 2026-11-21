@@ -1,9 +1,9 @@
 'use strict';
 /* ===== core: utils, world map, sprites, tiles ===== */
 const $=id=>document.getElementById(id);
-const TS=16,W=100,H=80,WW=W*TS,WH=H*TS;
-const T={GRASS:0,TREE:1,WATER:2,PATH:3,WALL:4,FLOOR:5,HOUSE:6,BRIDGE:7,GATE:8,FLOWER:9,SHRINE:10,ROCK:11,MUD:12,GRAVE:13,TENT:14,BONES:15};
-const SOLID=new Set([1,2,4,6,8,10,11,13,14]);
+const TS=16,W=140,H=110,WW=W*TS,WH=H*TS;
+const T={GRASS:0,TREE:1,WATER:2,PATH:3,WALL:4,FLOOR:5,HOUSE:6,BRIDGE:7,GATE:8,FLOWER:9,SHRINE:10,ROCK:11,MUD:12,GRAVE:13,TENT:14,BONES:15,LAVA:16};
+const SOLID=new Set([1,2,4,6,8,10,11,13,14,16]);
 const PSOLID=new Set([1,4,6,8,10,11,13,14]);
 const map=new Uint8Array(W*H),reg=new Uint8Array(W*H);
 const at=(x,y)=>(x<0||y<0||x>=W||y>=H)?T.TREE:map[y*W+x];
@@ -22,59 +22,73 @@ let UIDN=1;const uid=()=>Date.now().toString(36)+'_'+(UIDN++);
 function cnv(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
 
 /* ----- layout ----- */
-const RN=['meadow','village','forest','swamp','hills','grave','crypt'];
-const VIL={x0:40,y0:30,x1:60,y1:46},CRYPT={x0:70,y0:58,x1:94,y1:76},GATE={x:82,y:58};
+const RN=['meadow','village','forest','swamp','hills','grave','crypt','snow','ash'];
+const VIL={x0:60,y0:45,x1:80,y1:61},CRYPT={x0:105,y0:86,x1:130,y1:104},GATE={x:117,y:86};
 const inVil=(tx,ty)=>tx>=VIL.x0&&tx<=VIL.x1&&ty>=VIL.y0&&ty<=VIL.y1;
 const inCrypt=(tx,ty)=>tx>CRYPT.x0&&tx<CRYPT.x1&&ty>CRYPT.y0&&ty<CRYPT.y1;
-const HOUSES=[{x:43,y:32,roof:'#a8432e',dark:'#7e2c1d'},{x:53,y:32,roof:'#5a6274',dark:'#3d4352',smith:true},{x:43,y:40,roof:'#4f7a3a',dark:'#365a27'},{x:53,y:40,roof:'#3a5fc8',dark:'#24398a',guard:true}];
+const HOUSES=[{x:63,y:47,roof:'#a8432e',dark:'#7e2c1d'},{x:73,y:47,roof:'#5a6274',dark:'#3d4352',smith:true},{x:63,y:55,roof:'#4f7a3a',dark:'#365a27'},{x:73,y:55,roof:'#3a5fc8',dark:'#24398a',guard:true}];
 const SHRINE_DEF=[
- {id:'frost',x:10,y:14,boss:'fang',lvl:6,name:'Руна Инея',col:'#8fe8ff',where:'в Тёмном лесу на западе'},
- {id:'fire',x:88,y:10,boss:'grokk',lvl:8,name:'Руна Пламени',col:'#ff9a4a',where:'на Гоблинских холмах на северо-востоке'},
- {id:'life',x:14,y:68,boss:'queen',lvl:10,name:'Руна Жизни',col:'#7fe07a',where:'в Гнилых топях на юго-западе'}];
-const CHEST_POS=[[5,30],[26,6],[40,10],[64,28],[96,28],[72,4],[6,76],[38,62],[62,74],[96,48],[73,74],[91,74]];
-const SPAWN={x:816,y:608};
-const TENTS=[[78,8],[84,18],[93,16],[74,14],[93,5]];
-
+ {id:'frost',x:14,y:38,boss:'fang',lvl:8,name:'Руна Инея',col:'#8fe8ff',where:'в Тёмном лесу на западе'},
+ {id:'fire',x:108,y:30,boss:'grokk',lvl:11,name:'Руна Пламени',col:'#ff9a4a',where:'на Гоблинских холмах на северо-востоке'},
+ {id:'life',x:24,y:96,boss:'queen',lvl:14,name:'Руна Жизни',col:'#7fe07a',where:'в Гнилых топях на юго-западе'},
+ {id:'storm',x:78,y:9,boss:'yeti',lvl:18,name:'Руна Бури',col:'#d8e8ff',where:'на Ледяном перевале далеко на севере'},
+ {id:'shadow',x:130,y:40,boss:'ashlord',lvl:21,name:'Руна Тени',col:'#b07aff',where:'в Пепельных пустошах на крайнем востоке'}];
+const CHEST_POS=[[6,44],[34,30],[52,34],[88,44],[96,14],[132,10],[56,6],[100,4],[12,64],[30,86],[8,104],[60,92],[90,76],[134,64],[126,30],[96,100],[108,102],[128,102]];
+const SPAWN={x:1136,y:848};
+const TENTS=[[100,20],[112,22],[116,40],[98,34],[104,14]];
 function regionCalc(tx,ty){
   if(inVil(tx,ty))return 1;
   if(tx>=CRYPT.x0&&tx<=CRYPT.x1&&ty>=CRYPT.y0&&ty<=CRYPT.y1)return 6;
   const o=Math.round(Math.sin(tx*.31+ty*.07)*1.6+Math.cos(ty*.27-tx*.05)*1.6);
-  if(tx+o<34&&ty-o<48)return 2;
-  if(ty+o>=53&&tx-o<58)return 3;
-  if(tx-o>=64&&ty+o<44)return 4;
-  if(tx-o>=58&&ty+o>=46)return 5;
+  if(ty+o<22)return 7;
+  if(tx-o>=120&&ty+o<80)return 8;
+  if(tx+o<46&&ty-o<74)return 2;
+  if(ty+o>=78&&tx-o<84)return 3;
+  if(tx-o>=92&&ty+o<62)return 4;
+  if(tx-o>=84&&ty+o>=66)return 5;
   return 0;
 }
 function genMap(){
   const R=mulberry32(4242);
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-    const r=regionCalc(x,y);reg[y*W+x]=r;let t=T.GRASS;const q=R();
+    const r=regionCalc(x,y);reg[y*W+x]=r;let t=T.GRASS;const q=R();const n=Math.sin(x*.45)*Math.cos(y*.38)+Math.sin((x+y)*.2);
     if(r===0){if(q<.06)t=T.FLOWER;else if(q<.11)t=T.TREE;else if(q<.125)t=T.ROCK}
     else if(r===2){if(q<.36)t=T.TREE;else if(q<.39)t=T.ROCK;else if(q<.45)t=T.FLOWER}
-    else if(r===3){const n=Math.sin(x*.45)*Math.cos(y*.38)+Math.sin((x+y)*.2);if(n>1.05)t=T.WATER;else if(q<.32)t=T.MUD;else if(q<.40)t=T.TREE;else if(q<.43)t=T.FLOWER}
+    else if(r===3){if(n>1.05)t=T.WATER;else if(q<.32)t=T.MUD;else if(q<.40)t=T.TREE;else if(q<.43)t=T.FLOWER}
     else if(r===4){if(q<.06)t=T.ROCK;else if(q<.09)t=T.TREE;else if(q<.13)t=T.FLOWER}
     else if(r===5){if(q<.12&&x%3===0)t=T.GRAVE;else if(q<.17)t=T.TREE;else if(q<.21)t=T.BONES}
+    else if(r===7){if(n>1.2)t=T.WATER;else if(q<.2)t=T.TREE;else if(q<.25)t=T.ROCK}
+    else if(r===8){if(n>1.1)t=T.LAVA;else if(q<.06)t=T.TREE;else if(q<.13)t=T.ROCK;else if(q<.17)t=T.BONES}
     else if(r===1){if(q<.05)t=T.FLOWER}
     map[y*W+x]=t;
   }
-  for(let x=0;x<=60;x++){const y0=49+Math.round(Math.sin(x*.2)*1.3);for(let k=0;k<3;k++)set(x,y0+k,T.WATER)}
-  ell(63,51,5,3,T.WATER);ell(66,20,4,3,T.WATER);ell(24,26,3,2,T.WATER);
+  for(let x=0;x<=100;x++){const y0=71+Math.round(Math.sin(x*.2)*1.3);for(let k=0;k<3;k++)if(RG(x,y0+k)!==1)set(x,y0+k,T.WATER)}
+  for(let x=28;x<=112;x++){const y0=25+Math.round(Math.sin(x*.17)*1.2);for(let k=0;k<2;k++)set(x,y0+k,T.WATER)}
+  ell(90,38,5,3,T.WATER);ell(40,60,4,3,T.WATER);ell(100,66,4,3,T.WATER);ell(40,12,6,3,T.WATER);
   rect(CRYPT.x0-2,CRYPT.y0-3,CRYPT.x1+2,CRYPT.y1+1,T.GRASS);
+  rect(VIL.x0,VIL.y0,VIL.x1,VIL.y1,T.GRASS);for(let y=VIL.y0;y<=VIL.y1;y++)for(let x=VIL.x0;x<=VIL.x1;x++)if(R()<.05)set(x,y,T.FLOWER);
   SHRINE_DEF.forEach(s=>disc(s.x,s.y,6,T.GRASS));
   CHEST_POS.forEach(([x,y])=>rect(x-1,y-1,x+1,y+1,T.GRASS));
-  const path=(x,y)=>set(x,y,at(x,y)===T.WATER||at(x,y)===T.BRIDGE?T.BRIDGE:T.PATH);
+  const path=(x,y)=>{const t=at(x,y);set(x,y,t===T.WATER||t===T.BRIDGE||t===T.LAVA?T.BRIDGE:T.PATH)};
   const hl=(y,x0,x1)=>{for(let x=x0;x<=x1;x++)path(x,y)},vl=(x,y0,y1)=>{for(let y=y0;y<=y1;y++)path(x,y)};
-  hl(37,4,95);hl(38,4,95);vl(50,4,74);vl(51,4,74);
-  vl(12,14,38);vl(88,10,38);hl(68,14,50);vl(82,38,57);vl(83,38,57);
+  hl(52,4,135);hl(53,4,135);vl(70,4,100);vl(71,4,100);
+  vl(14,38,53);vl(108,30,53);hl(96,24,70);hl(9,71,78);vl(130,40,53);vl(117,53,85);vl(118,53,85);
   SHRINE_DEF.forEach(s=>rect(s.x-1,s.y-1,s.x+1,s.y+1,T.PATH));
   HOUSES.forEach(h=>rect(h.x,h.y,h.x+3,h.y+2,T.HOUSE));
   TENTS.forEach(([x,y])=>set(x,y,T.TENT));
   rect(CRYPT.x0,CRYPT.y0,CRYPT.x1,CRYPT.y1,T.WALL);rect(CRYPT.x0+1,CRYPT.y0+1,CRYPT.x1-1,CRYPT.y1-1,T.FLOOR);
-  [[76,63],[88,63],[76,71],[88,71],[82,74]].forEach(([x,y])=>set(x,y,T.WALL));
+  [[110,91],[124,91],[110,99],[124,99],[117,102]].forEach(([x,y])=>set(x,y,T.WALL));
   set(GATE.x,GATE.y,T.GATE);
   SHRINE_DEF.forEach(s=>set(s.x,s.y,T.SHRINE));
   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(x<2||y<2||x>=W-2||y>=H-2)set(x,y,T.TREE);
+  CHEST_POS.forEach(([x,y])=>{if(!inCrypt(x,y))carve(x,y)});
 }
+/* carve a walkable route from (sx,sy) to the nearest path tile */
+function carve(sx,sy){const prev=new Int32Array(W*H).fill(-1),q=[sy*W+sx];prev[q[0]]=q[0];let end=-1;
+  for(let h=0;h<q.length;h++){const i=q[h],x=i%W,y=(i/W)|0;const t=map[i];if((t===T.PATH||t===T.BRIDGE)&&h>0){end=i;break}
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<2||ny<2||nx>=W-2||ny>=H-2)continue;const j=ny*W+nx;if(prev[j]>=0)continue;
+      const tt=map[j];if(tt===T.WALL||tt===T.HOUSE||tt===T.GATE||tt===T.SHRINE||tt===T.TENT||inCrypt(nx,ny))continue;prev[j]=i;q.push(j)}}
+  if(end<0)return;let i=end;while(i!==prev[i]){const t=map[i];if(t===T.WATER||t===T.LAVA)map[i]=T.BRIDGE;else if(SOLID.has(t)||t===T.MUD)map[i]=T.GRASS;i=prev[i]}}
 
 /* ----- sprites ----- */
 const PAL={k:'#1a1420',s:'#f0c8a0',b:'#3a5fc8',B:'#24398a',h:'#6b4226',H:'#4a2a18',y:'#f2c14e',w:'#f4f0e6',W:'#c9c2b2',g:'#8a8f98',G:'#4f535c',r:'#e0402e',R:'#7a2018',p:'#c48aff',P:'#4a2580',v:'#2e1650',e:'#6ac04a',E:'#2f7a35',c:'#8fe8ff',t:'#8a5a32',T:'#5e3a1e',n:'#2d5e2a',N:'#1b3a1c',m:'#3f7d35',l:'#7ab04a',L:'#4f7a30',u:'#d8cfa0',x:'#3a2a30',z:'#7a9a7a',Z:'#4f6a50',q:'#e87ab8',o:'#e8822e'};
@@ -113,7 +127,7 @@ amulet:["..k......k..","...k....k...","....k..k....",".....kk.....","....kyyk...
 ring:["....kkk.....","...kcwck....","....kkk.....","...kyyyk....","..ky...yk...","..ky...yk...","..ky...yk...","...kyyyk....","....kkk.....","............","............","............"],
 pot:["....kkk.....","....khk.....","...kk.kk....","..kwrrrrk...",".kwrrrrrrk..",".krrrrrrrk..",".krrrrrrrk..","..kRrrrRk...","...kkkkk....","............","............","............"]
 };
-const ALT={tslime:['slime',{e:'#b07ad8',E:'#5a2a80',w:'#f0d8ff'}],queen:['slime',{e:'#e87ab8',E:'#9a3a78',w:'#ffe0f0'}],fang:['wolf',{g:'#4a4450',G:'#2a2430',W:'#6a6470',r:'#ff3020'}],
+const ALT={snowpine:['pine',{n:'#5a7a8a',m:'#e8f0f8',l:'#ffffff',N:'#3a5060'}],burnt:['dead',{T:'#2a2020'}],yeti:['ogre',{l:'#e8f0f8',L:'#9ab0c8',t:'#6a8aa8',T:'#3a5070'}],ashlord:['lich',{w:'#3a2a2a',P:'#8a2a14',p:'#ff9a3a',v:'#4a1010',y:'#ff6a3a'}],iwolf:['wolf',{g:'#c8dcf0',G:'#7a9ab8',W:'#ffffff'}],troll:['ogre',{l:'#a8c0d0',L:'#6a8098'}],wraith:['ghost',{w:'#a8d8ff',W:'#6a9ad0'}],imp:['goblin',{e:'#d8402e',E:'#8a1a10',t:'#3a2020'}],golem:['ogre',{l:'#6a5a50',L:'#3a2e28',t:'#c8401e',T:'#8a2a14',w:'#ffb03a'}],tslime:['slime',{e:'#b07ad8',E:'#5a2a80',w:'#f0d8ff'}],queen:['slime',{e:'#e87ab8',E:'#9a3a78',w:'#ffe0f0'}],fang:['wolf',{g:'#4a4450',G:'#2a2430',W:'#6a6470',r:'#ff3020'}],
  garcher:['goblin',{t:'#5a6a3a',T:'#3a4a2a',g:'#8a5a32'}],grokk:['ogre',{l:'#8a7a50',L:'#5a4a30',t:'#7a2018',T:'#4a1010'}],sarcher:['skel',{w:'#d8cfa0'}],
  tara:['warrior',{r:'#3a5fc8',g:'#b8bcc4'}],potmp:['pot',{r:'#4a7fe0',R:'#24398a'}]};
 function mk(rows,ov){const pal=ov?{...PAL,...ov}:PAL;const w=Math.max(...rows.map(r=>r.length)),h=rows.length,c=cnv(w,h),x=c.getContext('2d');
@@ -126,7 +140,7 @@ function bigURL(s,scale){const c=cnv(s.width*scale,s.height*scale),x=c.getContex
 const ICON={};['staff','dagger','sword','bow','armor','amulet','ring','pot','potmp'].forEach(k=>ICON[k]=bigURL(SPR[k],3));
 
 /* ----- tiles ----- */
-const GP=[['#4f8a3a','#437a31','#66a34b'],['#4f8a3a','#437a31','#66a34b'],['#2e5a2b','#244a22','#3c6e35'],['#4d5a2e','#404c26','#62703c'],['#8a9248','#767f3c','#a3aa5c'],['#4d4c40','#403f35','#5f5d4c'],['#4d4c40','#403f35','#5f5d4c']];
+const GP=[['#4f8a3a','#437a31','#66a34b'],['#4f8a3a','#437a31','#66a34b'],['#2e5a2b','#244a22','#3c6e35'],['#4d5a2e','#404c26','#62703c'],['#8a9248','#767f3c','#a3aa5c'],['#4d4c40','#403f35','#5f5d4c'],['#4d4c40','#403f35','#5f5d4c'],['#dfe6ee','#c4d0dd','#f6f9fc'],['#4a3a36','#3a2c2a','#5c4842']];
 const worldCv=cnv(WW,WH),wx=worldCv.getContext('2d');
 function px(c,col,x,y,w=1,h=1){c.fillStyle=col;c.fillRect(x,y,w,h)}
 function drawTile(c,tx,ty){
@@ -138,13 +152,14 @@ function drawTile(c,tx,ty){
   case T.GRASS:case T.HOUSE:grass();break;
   case T.FLOWER:grass();
     if(r===2){for(let i=0;i<2;i++){const fx=X+2+((h(20+i)*10)|0),fy=Y+3+((h(30+i)*9)|0);px(c,'#e8e0d0',fx+1,fy+2,1,2);px(c,'#c8402e',fx,fy,3,2);px(c,'#fff',fx+1,fy,1,1)}}
-    else{const cols=r===5?['#c9c2b2','#9a8fa8']:r===3?['#c8d86a','#e8e0a0']:r===4?['#f2c14e','#e8822e']:['#efe6f5','#f2c14e','#e0607a','#9fb7ff'];
+    else{const cols=r===7?['#a8c8ff','#ffffff']:r===8?['#ff6a3a','#f2a03a']:r===5?['#c9c2b2','#9a8fa8']:r===3?['#c8d86a','#e8e0a0']:r===4?['#f2c14e','#e8822e']:['#efe6f5','#f2c14e','#e0607a','#9fb7ff'];
       for(let i=0;i<3;i++){const fx=X+2+((h(20+i)*11)|0),fy=Y+2+((h(30+i)*11)|0);px(c,cols[(h(40+i)*cols.length)|0],fx,fy,2,2)}}break;
-  case T.TREE:grass();shade();c.drawImage(r===2?SPR.pine:(r===3||r===5)?SPR.dead:SPR.tree,X,Y-2);break;
+  case T.TREE:grass();shade();c.drawImage(r===2?SPR.pine:r===7?SPR.snowpine:r===8?SPR.burnt:(r===3||r===5)?SPR.dead:SPR.tree,X,Y-2);break;
   case T.ROCK:grass();c.drawImage(SPR.rock,X,Y);break;
   case T.GRAVE:grass();c.drawImage(SPR.grave,X,Y);break;
   case T.TENT:grass();c.drawImage(SPR.tent,X,Y+4);break;
   case T.BONES:grass();px(c,'#e8e0d0',X+4,Y+10,6,1);px(c,'#e8e0d0',X+3,Y+9,1,3);px(c,'#e8e0d0',X+10,Y+9,1,3);px(c,'#e8e0d0',X+9,Y+3,4,3);px(c,'#1a1420',X+10,Y+4,1,1);break;
+  case T.LAVA:{px(c,'#8a2a14',X,Y,16,16);px(c,'#c8401e',X+1,Y+1,14,14);for(let i=0;i<4;i++)px(c,i%2?'#f2a03a':'#ffd36a',X+2+((h(i)*11)|0),Y+2+((h(i+4)*11)|0),2,2);break}
   case T.MUD:px(c,'#4a4630',X,Y,16,16);for(let i=0;i<3;i++)px(c,'#3a5a5a',X+((h(i)*10)|0),Y+((h(i+3)*13)|0),5,2);px(c,'#5a5638',X+((h(8)*12)|0),Y+((h(9)*12)|0),2,1);break;
   case T.WATER:{px(c,'#2c6aa8',X,Y,16,16);for(let i=0;i<3;i++)px(c,'#4a8fd0',X+((h(i)*12)|0),Y+3+i*5,4,1);
     const up=at(tx,ty-1),dn=at(tx,ty+1);if(up!==T.WATER&&up!==T.BRIDGE){px(c,'#3b6e2e',X,Y,16,1);px(c,'#a8d8f0',X,Y+1,16,1)}if(dn!==T.WATER&&dn!==T.BRIDGE)px(c,'#1f4f80',X,Y+14,16,2);break}
@@ -174,7 +189,7 @@ function renderWorld(){for(let y=0;y<H;y++)for(let x=0;x<W;x++)drawTile(wx,x,y);
 /* ----- minimap + fog ----- */
 const mmBase=cnv(W,H),mmb=mmBase.getContext('2d'),fogCv=cnv(W,H),fogx=fogCv.getContext('2d');
 const explored=new Uint8Array(W*H);
-function mmColor(x,y){const t=at(x,y),r=RG(x,y);return{1:'#1f3f1c',2:'#2c6aa8',3:'#b39560',4:'#70747e',5:'#3b3642',6:'#a8432e',7:'#9a6a3a',8:'#9a5fe0',10:'#f2c14e',11:'#7a7f88',12:'#4a4630',13:'#9a9fa8',14:'#8a5a32'}[t]||GP[r][0]}
+function mmColor(x,y){const t=at(x,y),r=RG(x,y);return{1:'#1f3f1c',2:'#2c6aa8',3:'#b39560',4:'#70747e',5:'#3b3642',6:'#a8432e',7:'#9a6a3a',8:'#9a5fe0',10:'#f2c14e',11:'#7a7f88',12:'#4a4630',13:'#9a9fa8',14:'#8a5a32',16:'#e0602e'}[t]||GP[r][0]}
 function buildMM(){for(let y=0;y<H;y++)for(let x=0;x<W;x++){mmb.fillStyle=mmColor(x,y);mmb.fillRect(x,y,1,1)}}
 function resetFog(){explored.fill(0);fogx.globalCompositeOperation='source-over';fogx.fillStyle='#0b0910';fogx.fillRect(0,0,W,H)}
 function reveal(cx,cy,r){for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++){if(x<0||y<0||x>=W||y>=H)continue;if((x-cx)**2+(y-cy)**2>r*r)continue;const i=y*W+x;if(!explored[i]){explored[i]=1;fogx.clearRect(x,y,1,1)}}}
@@ -182,7 +197,7 @@ function fogPack(){let s='';for(let i=0;i<explored.length;i+=8){let b=0;for(let 
 function fogUnpack(str){resetFog();try{const s=atob(str);for(let j=0;j<s.length;j++){const b=s.charCodeAt(j);for(let k=0;k<8;k++)if(b&(1<<k)){const i=j*8+k;if(i<explored.length){explored[i]=1;fogx.clearRect(i%W,(i/W)|0,1,1)}}}}catch(_){}}
 
 /* ----- audio ----- */
-let AC=null,muted=false,lastHit=0;
+let AC=null,muted=false,lastHit=0;const SET={music:.5,sfx:.8,autoFull:true};
 const SFX={swing:['triangle',600,200,.05,.08],bow:['triangle',900,300,.04,.07],fire:['sawtooth',340,90,.04,.22],hit:['square',220,70,.035,.06],coin:['square',880,1400,.025,.08],hurt:['sawtooth',170,60,.07,.22],lvl:['triangle',440,990,.07,.5],heal:['sine',500,1000,.06,.35],nova:['sine',1000,180,.07,.45],rune:['triangle',330,1100,.08,.8],boss:['sawtooth',110,40,.07,.9],orb:['sine',300,180,.02,.15],die:['square',220,40,.06,.6],deny:['square',140,120,.03,.08],boom:['sawtooth',120,30,.09,.5],zap:['square',1200,300,.04,.15],growl:['sawtooth',90,60,.06,.4],item:['triangle',660,1320,.05,.25],legend:['triangle',220,1760,.08,1.2]};
 function sfx(n){if(!AC||muted)return;if(n==='hit'){const now=performance.now();if(now-lastHit<45)return;lastHit=now}
-  const p=SFX[n];if(!p)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=p[0];o.frequency.setValueAtTime(p[1],t);o.frequency.exponentialRampToValueAtTime(p[2],t+p[4]);g.gain.setValueAtTime(p[3],t);g.gain.exponentialRampToValueAtTime(.0001,t+p[4]);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+p[4]+.03)}
+  const p=SFX[n];if(!p)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=p[0];o.frequency.setValueAtTime(p[1],t);o.frequency.exponentialRampToValueAtTime(p[2],t+p[4]);g.gain.setValueAtTime(Math.max(.0002,p[3]*SET.sfx),t);g.gain.exponentialRampToValueAtTime(.0001,t+p[4]);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+p[4]+.03)}

@@ -49,12 +49,4 @@ function renderBinds(){const t=$('bindList');if(!t)return;t.innerHTML='';
     for(let i=0;i<2;i++){const isCap=capture&&capture.a===a&&capture.i===i;const b=el('button','bkey'+(isCap?' cap':'')+(BINDS[a][i]?'':' none'),isCap?'Нажми…':keyName(BINDS[a][i]));
       b.addEventListener('click',()=>{setTimeout(()=>{capture={a,i};renderBinds()},0)});row.appendChild(b)}
     t.appendChild(row)}}}
-function openMenu(){G.state='menu';capture=null;$('ovMenu').hidden=false;$('bSound').textContent=muted?'Звук: выкл':'Звук: вкл';renderBinds()}
-$('bResume').addEventListener('click',()=>{capture=null;closeOv()});
-$('bSound').addEventListener('click',()=>{muted=!muted;$('bSound').textContent=muted?'Звук: выкл':'Звук: вкл'});
-$('bFull3').addEventListener('click',()=>toggleFull());
-$('bReset').addEventListener('click',()=>{BINDS=JSON.parse(JSON.stringify(DEFAULT_BINDS));saveBinds();renderBinds();if(P)buildHotbar()});
-$('bQuit').addEventListener('click',()=>{save();capture=null;$('ovMenu').hidden=true;$('hud').hidden=true;G.state='title';$('ovTitle').hidden=false;buildTitle()});
-$('bMenu').addEventListener('click',()=>{if(G.state==='play')openMenu()});
-$('bResume2').addEventListener('click',()=>{capture=null;closeOv()});
 function kb(a){return keyName((BINDS[a]||[]).find(Boolean)||'')}
