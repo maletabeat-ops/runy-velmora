@@ -139,6 +139,7 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
 .bkey{font:700 13px var(--f-body);padding:6px 4px;border-radius:5px;border:1px solid var(--edge);border-bottom-width:3px;background:#2a2135;color:var(--parch);cursor:pointer}
 .bkey.none{color:#5d4e6c}.bkey.cap{background:var(--gold);color:#2a1806;border-color:var(--gold)}
 .bkey:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.baghead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.baghead .abtn{padding:5px 10px;font-size:13px}
 /* menus */
 .menuov{background:radial-gradient(ellipse at 50% 40%,rgba(15,11,22,.25),rgba(8,6,12,.85))}
 .mmwrap{width:min(560px,100%);display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -251,7 +252,7 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
         <div class="icol"><h4>Надето</h4><div class="eq" id="eqGrid"></div><h4>Характеристики</h4><dl class="st" id="statList"></dl></div>
         <div class="icol">
           <div id="shopWrap" hidden><h4 id="shopTitle">Товары</h4><div class="grid" id="shopGrid"></div></div>
-          <h4>Сумка <span id="bagCount"></span></h4>
+          <div class="baghead"><h4>Сумка <span id="bagCount"></span></h4><button class="abtn" id="sellJunk" title="Продаёт все обычные и необычные вещи из сумки" hidden></button></div>
           <div class="grid" id="bagGrid"></div>
           <div class="det" id="det"></div>
         </div>

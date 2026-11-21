@@ -63,6 +63,8 @@ function renderInv(){
     $('shopTitle').textContent=shop==='herb'?'Зелья':'Товары (обновляются с новым уровнем)'}
   const bg=$('bagGrid');bg.innerHTML='';for(let i=0;i<24;i++){const it=P.bag[i];bg.appendChild(cell(it,()=>{if(it){INV.sel={src:'bag',i};renderInv()}},INV.sel&&INV.sel.src==='bag'&&INV.sel.i===i))}
   $('bagCount').textContent=P.bag.length+' / 24';
+  const junk=P.bag.filter(it=>it.rar<=1&&!it.fx),jv=junk.reduce((a,it)=>a+it.price,0),sj=$('sellJunk');sj.hidden=!junk.length;
+  sj.textContent=`Продать хлам: ${junk.length} шт. за ${jv}`;sj.onclick=()=>{P.gold+=jv;P.bag=P.bag.filter(it=>!junk.includes(it));INV.sel=null;sfx('coin');toast(`Продано вещей: ${junk.length}. +${jv} золота`);save();renderInv()};
   const det=$('det');det.innerHTML='';const s=INV.sel;
   const it=!s?null:s.src==='bag'?P.bag[s.i]:s.src==='eq'?P.eq[s.k]:INV.shopItems&&INV.shopItems[s.i];
   if(!it){det.append(el('p','hint',inShop?'Нажми на товар, чтобы купить, или на вещь в сумке, чтобы продать.':'Нажми на вещь, чтобы рассмотреть, надеть или выбросить.'));return}
@@ -70,8 +72,8 @@ function renderInv(){
   else det.append(el('div','',itemHTML(it)));
   const row=el('div','acts');
   if(s.src==='bag'){const ok=!(it.slot==='weapon'&&it.cls!==P.cls);row.append(act('Надеть',()=>equip(s.i),true,!ok));
-    if(inShop&&shop==='smith')row.append(act('Продать за '+it.price,()=>{P.gold+=it.price;P.bag.splice(s.i,1);INV.sel=null;sfx('coin');renderInv()}));
-    else row.append(act('Выбросить',()=>{P.bag.splice(s.i,1);INV.sel=null;renderInv()}))}
+    row.append(act('Продать за '+it.price,()=>{P.gold+=it.price;P.bag.splice(s.i,1);INV.sel=null;sfx('coin');save();renderInv()}));
+    row.append(act('Выбросить',()=>{P.bag.splice(s.i,1);INV.sel=null;renderInv()}))}
   else if(s.src==='eq')row.append(act('Снять',()=>{if(P.bag.length>=24)return;P.bag.push(P.eq[s.k]);P.eq[s.k]=null;recalc();INV.sel=null;renderInv()},false,P.bag.length>=24||s.k==='weapon'&&false));
   else{const can=P.gold>=it.cost&&(it.slot==='potion'||P.bag.length<24);row.append(act(`Купить за ${it.cost}`,()=>{if(!can)return;P.gold-=it.cost;sfx('coin');
     if(it.slot==='potion')P.pots[it.kind]++;else{const real=P.stock.find(x=>x.uid===it.uid);P.stock=P.stock.filter(x=>x!==real);P.bag.push(real);INV.sel=null}renderInv()},true,!can));
