@@ -2,7 +2,7 @@
 /* ===== render: art sprites, props, light, weather ===== */
 const cv=$('cv'),ctx=cv.getContext('2d');
 let VW=320,VH=200,SCALE=4;const dk=cnv(1,1),dctx=dk.getContext('2d'),vg=cnv(1,1);
-function resize(){const w=innerWidth,h=innerHeight,k=Math.max(1,Math.round(Math.min(w,h)/460));SCALE=2*k;
+function resize(){const w=innerWidth,h=innerHeight,k=Math.max(1,Math.floor(Math.min(w,h)/680));SCALE=2*k;
   VW=Math.ceil(w/SCALE);VH=Math.ceil(h/SCALE);cv.width=VW*AP;cv.height=VH*AP;cv.style.width=VW*SCALE+'px';cv.style.height=VH*SCALE+'px';ctx.imageSmoothingEnabled=false;
   dk.width=VW*AP;dk.height=VH*AP;vg.width=VW*AP;vg.height=VH*AP;const vx=vg.getContext('2d'),g=vx.createRadialGradient(vg.width/2,vg.height/2,Math.min(vg.width,vg.height)*.35,vg.width/2,vg.height/2,Math.max(vg.width,vg.height)*.75);
   g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(6,6,20,.5)');vx.fillStyle=g;vx.fillRect(0,0,vg.width,vg.height)}
