@@ -1,6 +1,6 @@
 {
- "name": "Острова Шторма",
- "short_name": "Острова Шторма",
+ "name": "Расколотая Луна",
+ "short_name": "Расколотая Луна",
  "start_url": "./",
  "scope": "./",
  "display": "fullscreen",
@@ -9,8 +9,8 @@
   "standalone"
  ],
  "orientation": "any",
- "background_color": "#0f0d14",
- "theme_color": "#0f0d14",
+ "background_color": "#0b0d18",
+ "theme_color": "#0b0d18",
  "lang": "ru",
  "icons": [
   {

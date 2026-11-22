@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#0f0d14"><meta name="description" content="Острова Шторма: пиксельная RPG про архипелаг, лодку, подземелья и восемь боссов">
+<meta name="theme-color" content="#0b0d18"><meta name="description" content="Расколотая Луна: пиксельная RPG про зверолюдей, осколки луны и Орден Затмения">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Острова Шторма">
+<meta name="apple-mobile-web-app-title" content="Расколотая Луна">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
-<title>Острова Шторма</title>
+<title>Расколотая Луна</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700&family=Alegreya+Sans:wght@400;500;700&display=swap">
@@ -41,7 +41,7 @@ button{font-family:inherit}
 .tb kbd{font:700 10px var(--f-body);color:var(--muted);margin-left:4px}
 .tb:focus-visible,.slot:focus-visible,.cell:focus-visible,.abtn:focus-visible,.x:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .side{position:absolute;right:calc(10px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-#mm{width:160px;height:120px;image-rendering:pixelated;display:block;padding:3px}
+#mm{image-rendering:pixelated;display:block;padding:3px}
 #quest{font:500 14px/1.3 var(--f-body);padding:6px 10px;max-width:230px;text-align:right;text-wrap:balance}
 #quest small{display:block;color:var(--gold);font:700 10px var(--f-body);letter-spacing:.12em;text-transform:uppercase}#quest small.b{color:#8fe8ff;margin-top:5px}
 #boss{position:absolute;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));width:min(420px,40vw);text-align:center;padding:6px 10px 8px}
@@ -162,6 +162,34 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
 .trow.locked{opacity:.5}.trow .pips{display:flex;gap:3px}.trow .pips b{width:9px;height:9px;border-radius:2px;background:#3a2f45}.trow .pips b.on{background:var(--gold)}
 .tplus{width:30px;height:30px;font:700 18px var(--f-body);border-radius:5px;border:1px solid var(--gold);background:linear-gradient(#f5cd62,#c8922a);color:#2a1806;cursor:pointer}.tplus:disabled{opacity:.3;cursor:default;background:#2a2135;color:var(--muted);border-color:var(--edge)}
 @media (max-width:760px){.talgrid{grid-template-columns:1fr}}
+#dlg{display:flex;gap:12px;align-items:flex-end;padding:10px 12px}#dlg .dbody{flex:1;min-width:0}
+.dpor{width:96px;height:auto;image-rendering:pixelated;flex:none;border:2px solid var(--edge);border-radius:4px;background:#120e17;align-self:flex-start}.dpor.r{order:3}
+@media (max-width:640px){.dpor{width:64px}}
+.talgrid{display:flex;flex-direction:column;gap:12px;padding:14px;overflow-x:auto}
+.tbranch{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:center;padding:10px;background:#120e17;border:1px solid #3a2f45;border-radius:6px;min-width:760px}
+.tbh{display:flex;gap:8px;align-items:center}.tbh img{width:36px;height:36px;image-rendering:pixelated}.tbh b{font:700 17px var(--f-title);color:var(--gold);display:block}.tbh small{color:var(--muted);font-size:12px}
+.tchain{display:flex;align-items:center;gap:0}
+.tcell{display:flex;flex-direction:column;gap:4px;align-items:center;position:relative;padding:0 6px}
+.tcell+.tcell::before{content:"";position:absolute;left:-10px;top:50%;width:14px;height:2px;background:#4a3a58}
+.tcell.fork{border:1px dashed #5d4e6c;border-radius:6px;padding:4px 6px}.forkl{font-size:10px;color:var(--muted);order:1}
+.tnode{width:86px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;border-radius:6px;border:2px solid #4a3a58;background:#1d1726;color:var(--parch);cursor:pointer;font:600 11px/1.2 var(--f-body);text-align:center}
+.tnode .tr{font-size:10px;color:var(--muted)}.tnode.on{border-color:var(--gold);background:#2e2440}.tnode.max{border-color:#7fe07a}.tnode.locked{opacity:.35;cursor:default}
+.tnode:not(.locked):hover,.tnode:focus-visible{border-color:#fff;outline:none}
+.fork .tnode:nth-of-type(2){order:2}
+.ttip{margin:0 14px;min-height:3.6em;font-size:14px;color:var(--parch);background:#120e17;border:1px solid #3a2f45;border-radius:6px;padding:8px 10px}
+.charw{width:min(860px,100%);padding:0 0 14px}.chb{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;padding:14px}
+.chl{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}.chl img{width:192px;image-rendering:pixelated;border:2px solid var(--edge);border-radius:6px;background:#120e17}
+.chl h4{margin:4px 0 0;font:700 20px var(--f-title);color:var(--gold)}.chl p{margin:0;font-size:13px;color:var(--muted)}.chl .perk{color:#cfd8ff}
+.chpts{font:700 15px var(--f-body);color:var(--gold);margin-bottom:8px}
+.strow{display:grid;grid-template-columns:minmax(0,1fr) 40px 32px;gap:8px;align-items:center;padding:6px 8px;background:#120e17;border:1px solid #3a2f45;border-radius:5px;margin-bottom:6px}
+.strow b{font-size:15px}.strow small{display:block;color:var(--muted);font-size:12px}.sv{font:700 18px var(--f-title);text-align:center;color:var(--parch)}
+.chr h4{margin:12px 0 4px;font:700 12px var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.jourw{width:min(640px,100%);padding:0 0 14px}#jList{padding:14px;display:flex;flex-direction:column;gap:8px}
+.jcur{padding:10px 12px}.jcur small{display:block;color:var(--gold);font:700 11px var(--f-body);letter-spacing:.12em;text-transform:uppercase}.jcur b{font:700 18px var(--f-title)}.jcur p{margin:4px 0 0;font-size:14px;line-height:1.45}
+.jdone{color:var(--muted);font-size:14px;padding:2px 4px}
+.pips.attr{grid-template-columns:repeat(5,1fr);width:100%;text-align:center}.pips.attr .pip{flex-direction:column;gap:0}.pips.attr b{font:700 16px var(--f-title);color:var(--parch);width:auto;height:auto;background:none}
+.chip img{width:32px;height:32px;image-rendering:pixelated;object-fit:cover;object-position:top}
+@media (max-width:760px){.chb{grid-template-columns:1fr}}
 /* menus */
 .menuov{background:radial-gradient(ellipse at 50% 40%,rgba(15,11,22,.25),rgba(8,6,12,.85))}
 .mmwrap{width:min(560px,100%);display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -202,7 +230,7 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
 @media (max-width:760px){.ngbody,.pause{grid-template-columns:1fr}.pv img{width:96px;height:96px}}
 /* map */
 .mapw{width:min(820px,100%);padding:0 0 12px}
-.mapbox{position:relative;margin:14px;aspect-ratio:160/120;max-width:calc(100% - 28px)}
+.mapbox{position:relative;margin:14px;max-width:calc(100% - 28px)}
 #bigmap{width:100%;height:100%;image-rendering:pixelated;display:block;border-radius:4px}
 .mlab{position:absolute;transform:translate(-50%,-50%);font:700 13px var(--f-title);color:#fff;text-shadow:0 1px 0 #000,0 0 6px #000;text-align:center;white-space:nowrap;pointer-events:none}
 .mlab small{display:block;font:500 11px var(--f-body);color:#e8dcc0}
@@ -228,7 +256,7 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
           <div class="row sm"><span id="clock"></span></div>
         </div>
       </div>
-      <div class="tbtns"><button class="tb" id="bBag">Сумка<kbd>I</kbd></button><button class="tb" id="bMap">Карта<kbd>M</kbd></button><button class="tb" id="bTal">Таланты<kbd>T</kbd></button><button class="tb" id="bFull" aria-label="Полный экран">⛶</button><button class="tb" id="bMenu" aria-label="Пауза и настройки">Пауза<kbd>Esc</kbd></button></div>
+      <div class="tbtns"><button class="tb" id="bBag">Сумка<kbd>I</kbd></button><button class="tb" id="bMap">Карта<kbd>M</kbd></button><button class="tb" id="bChar">Герой<kbd>C</kbd></button><button class="tb" id="bTal">Таланты<kbd>T</kbd></button><button class="tb" id="bJour">Дневник<kbd>J</kbd></button><button class="tb" id="bFull" aria-label="Полный экран">⛶</button><button class="tb" id="bMenu" aria-label="Пауза и настройки">Пауза<kbd>Esc</kbd></button></div>
     </div>
     <div class="side"><canvas id="mm" class="pnl" width="160" height="120"></canvas><div id="quest" class="pnl"></div></div>
     <div id="boss" class="pnl" hidden><div class="bn" id="bossN"></div><div class="bar"><i id="bossF"></i></div></div>
@@ -237,11 +265,11 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
     <div class="hotbar" id="hotbar"></div>
     <div id="joy" hidden><div id="knob"></div></div>
   </div>
-  <div id="dlg" class="pnl" hidden><div id="dWho"></div><p id="dTxt"></p><div class="chs" id="dCh" hidden></div><div class="more" id="dMore">E / пробел ▸</div></div>
+  <div id="dlg" class="pnl" hidden><img id="dPorL" class="dpor" alt="" hidden><img id="dPorR" class="dpor r" alt="" hidden><div class="dbody"><div id="dWho"></div><p id="dTxt"></p><div class="chs" id="dCh" hidden></div><div class="more" id="dMore">E / пробел ▸</div></div></div>
 
   <section class="ov menuov" id="ovTitle">
     <div class="mmwrap" id="mmMain">
-      <div class="logo"><img id="mLogo" alt=""><h1>Острова Шторма</h1><p class="sub">Пиксельная RPG: архипелаг, лодка, подземелья и восемь боссов</p></div>
+      <div class="logo"><img id="mLogo" alt=""><h1>Расколотая Луна</h1><p class="sub">Акт I: Пробуждение. Шесть рас, шесть классов, осколки луны и Орден Затмения</p></div>
       <nav class="mmnav">
         <button class="mbtn" id="mContinue" data-ico="play" hidden><span>Продолжить<small id="mContInfo"></small></span></button>
         <button class="mbtn" id="mNew" data-ico="star"><span>Новая игра</span></button>
@@ -254,7 +282,7 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
     <div class="mmwrap wide" id="mmNew" hidden>
       <header class="scrh"><button class="mbtn sm mback" data-ico="back"><span>Назад</span></button><h2>Новый герой</h2></header>
       <div class="ngbody">
-        <div class="pv pnl"><img id="pvImg" alt=""><h3 id="pvName"></h3><dl class="st" id="pvStats"></dl></div>
+        <div class="pv pnl"><img id="pvImg" alt=""><h3 id="pvName"></h3><div class="pips attr" id="pvAttr"></div><dl class="st" id="pvStats"></dl></div>
         <div class="ngpick pnl">
           <h4>Класс</h4><div class="chips" id="clsChips"></div><p class="desc" id="clsDesc"></p><ul class="sks" id="clsSk"></ul>
           <h4>Раса</h4><div class="chips" id="raceChips"></div><p class="desc" id="raceDesc"></p>
@@ -314,22 +342,30 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
   <section class="ov" id="ovTal" hidden>
     <div class="talw pnl"><header class="ih"><h3>Таланты</h3><span id="talPts" class="tpts"></span><button class="x" id="talClose" aria-label="Закрыть">✕</button></header>
       <div class="talgrid" id="talGrid"></div>
-      <p class="legend">Одно очко за каждый уровень. Нижние таланты ветки открываются, когда в неё вложено 2, 4 и 6 очков. Сбросить таланты можно у Отца Марина в деревне.</p></div>
+      <p class="ttip" id="talTip">Наведи на узел, чтобы прочитать описание. Узлы открываются по порядку слева направо. На развилках «или» можно взять только один из двух.</p></div>
+  </section>
+  <section class="ov" id="ovChar" hidden>
+    <div class="charw pnl"><header class="ih"><h3>Герой</h3><button class="x" id="charClose" aria-label="Закрыть">✕</button></header>
+      <div class="chb"><div class="chl"><img id="chPor" alt=""><h4 id="chName"></h4><p id="chLvl"></p><p class="perk" id="chPerk"></p></div>
+        <div class="chr"><div class="chpts" id="chPts"></div><div id="chStats"></div><h4>Итоговые характеристики</h4><dl class="st" id="chDer"></dl></div></div></div>
+  </section>
+  <section class="ov" id="ovJour" hidden>
+    <div class="jourw pnl"><header class="ih"><h3>Дневник</h3><button class="x" id="jourClose" aria-label="Закрыть">✕</button></header><div id="jList"></div></div>
   </section>
   <section class="ov" id="ovDead" hidden>
-    <div class="card pnl"><h2>Ты пал</h2><p class="story">Знахарка Мирра выловила тебя из воды и дотащила до деревни. Пятая часть золота и немного опыта куда-то пропали.</p><div class="btns"><button class="btn" id="bRespawn">Очнуться</button></div></div>
+    <div class="card pnl"><h2>Ты пал</h2><p class="story">Люция нашла тебя без сознания и донесла до Светлого Ручья. Пятая часть золота и немного опыта куда-то пропали.</p><div class="btns"><button class="btn" id="bRespawn">Очнуться</button></div></div>
   </section>
   <section class="ov" id="ovWin" hidden>
-    <div class="card pnl"><h2>Морвен повержена</h2><p class="story">Вечный шторм рассеялся, и над островами впервые за сто лет светит солнце. Но море большое, а в «Новой игре+» оно станет злее и щедрее.</p><div class="stat" id="winStats"></div>
-      <div class="btns"><button class="btn" id="bRoam">Гулять дальше</button><button class="btn" id="bNG">Новая игра+</button><button class="btn alt" id="bRestart">Главное меню</button></div></div>
+    <div class="card pnl"><h2>Победа</h2><p class="story">Вечный шторм рассеялся, и над островами впервые за сто лет светит солнце. Но море большое, а в «Новой игре+» оно станет злее и щедрее.</p><div class="stat" id="winStats"></div>
+      <div class="btns"><button class="btn" id="bRoam">Гулять дальше</button><button class="btn alt" id="bRestart">Главное меню</button></div></div>
   </section>
 </div>
 <script src="core.js"></script>
 <script src="data.js"></script>
+<script src="zones.js"></script>
 <script src="game.js"></script>
 <script src="ai.js"></script>
-<script src="dungeon.js"></script>
-<script src="town.js"></script>
+<script src="story.js"></script>
 <script src="render.js"></script>
 <script src="ui.js"></script>
 <script src="input.js"></script>

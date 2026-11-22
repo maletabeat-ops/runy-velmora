@@ -8,7 +8,7 @@ function blinkNear(e){for(let i=0;i<20;i++){const a=Math.random()*6.283,r=60+Mat
 function meleeWind(e,reach,wind,cd){e.acd=cd;e.wind=wind;e.onWind=()=>{const dd=Math.hypot(P.x-e.x,P.y-e.y)||1;e.swing=.15;if(dd<reach+8)hurtPlayer(e.dmg,(P.x-e.x)/dd,(P.y-e.y)/dd,thornsRef(e))}}
 const AI={
   hop(e,d,ux,uy,sp){if(e.t%1.1<.45)return[ux*sp*1.8,uy*sp*1.8];if(d<e.r+P.r+3&&e.acd<=0){e.acd=.9;hurtPlayer(e.dmg,ux,uy,thornsRef(e))}return[0,0]},
-  lunge(e,d,ux,uy,sp){if(d<46&&e.acd<=0){e.acd=1.7;e.wind=.38;e.onWind=()=>{const a=Math.atan2(P.y-e.y,P.x-e.x);e.leap=.22;e.leapHit=false;e.lvx=Math.cos(a)*200;e.lvy=Math.sin(a)*200};return[0,0]}return[ux*sp,uy*sp]},
+  lunge(e,d,ux,uy,sp){const R=e.f.charge?100:46;if(d<R&&e.acd<=0){e.acd=e.f.charge?2.6:1.7;e.wind=e.f.charge?.6:.38;e.onWind=()=>{const a=Math.atan2(P.y-e.y,P.x-e.x),s=e.f.charge?280:200;e.leap=e.f.charge?.38:.22;e.leapHit=false;e.lvx=Math.cos(a)*s;e.lvy=Math.sin(a)*s};return[0,0]}return[ux*sp,uy*sp]},
   melee(e,d,ux,uy,sp){const reach=e.r+P.r+8;if(d<reach&&e.acd<=0){meleeWind(e,reach,.42,1.15);return[0,0]}if(d<reach-2)return[0,0];return[ux*sp,uy*sp]},
   ghost(e,d,ux,uy,sp){return AI.melee(e,d,ux,uy,sp)},
   ranged(e,d,ux,uy,sp){const R=e.f.range;let v;if(d>R*.8)v=[ux*sp,uy*sp];else if(d<R*.45)v=[-ux*sp,-uy*sp];else v=[-uy*sp*.5*e.side,ux*sp*.5*e.side];
@@ -64,7 +64,7 @@ function updateEnemies(dt){
     if(d>520&&!e.f.boss&&!e.wave)continue;
     e.t+=dt;e.flash-=dt;e.slow-=dt;e.cd-=dt;e.acd-=dt;e.wt-=dt;if(e.swing>0)e.swing-=dt;
     if(e.poison>0){e.poison-=dt;e.ptk-=dt;if(e.ptk<=0){e.ptk=.5;dealDamage(e,e.pdps*.5,'dot');if(e.dead)continue}}
-    if(e.f.sea&&e.reg===9&&d>800){e.dead=true;continue}
+    if(e.stun>0){e.stun-=dt;e.flash=Math.max(e.flash,0);if(Math.random()<dt*6)parts.push({x:e.x+rr(4),y:ecy(e)-10,vx:0,vy:-10,life:.4,max:.4,col:'#f2d48a',size:1,g:0});continue}
     const ux=dx/d,uy=dy/d,mode=e.f.sea?'sea':e.f.ai==='ghost'?'ghost':'e';
     const sp=e.spd*(e.slow>0?e.slowF:1)*(mode==='e'&&at(e.x/16|0,e.y/16|0)===T.MUD?.7:1);
     const ar=e.f.ai==='ghost'?140:e.elite?135:115;
@@ -89,12 +89,14 @@ function updateEnemies(dt){
   enemies=enemies.filter(e=>!e.dead)}
 
 /* ----- projectiles & effects ----- */
-function explodeP(p){burst(p.x,p.y,'#ff9a4a',14,80,.4);burst(p.x,p.y,'#ffe08a',6,40,.3);rings.push({x:p.x,y:p.y,r:3,max:p.aoe,life:.25,col:'255,150,70'});
+function explodeP(p){const m=p.kind==='moon';burst(p.x,p.y,m?'#cfd8ff':'#ff9a4a',14,80,.4);burst(p.x,p.y,m?'#fff3c4':'#ffe08a',6,40,.3);rings.push({x:p.x,y:p.y,r:3,max:p.aoe,life:.25,col:m?'207,216,255':'255,150,70'});
   forNear(p.x,p.y,p.aoe,e=>{const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;dealDamage(e,p.dmg,'spell',dx/d,dy/d)})}
 function updateProj(dt){
   for(const p of proj){
     if(p.homing){const a=Math.atan2(P.y-5-p.y,P.x-p.x),c=Math.atan2(p.vy,p.vx);let df=a-c;while(df>Math.PI)df-=6.283;while(df<-Math.PI)df+=6.283;const n=c+clamp(df,-2*dt,2*dt),s=Math.hypot(p.vx,p.vy);p.vx=Math.cos(n)*s;p.vy=Math.sin(n)*s}
     p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.rot=(p.rot||0)+dt*14;
+    if((p.kind==='moon'||p.kind==='smite')&&Math.random()<.8)parts.push({x:p.x+rr(1),y:p.y+rr(1),vx:rr(8),vy:rr(8),life:.25,max:.25,col:Math.random()<.5?'#cfd8ff':'#fff3c4',size:1,g:0});
+    if(p.kind==='thorn'&&Math.random()<.7)parts.push({x:p.x,y:p.y,vx:rr(5),vy:rr(5),life:.2,max:.2,col:'#9fe060',size:1,g:0});
     if((p.kind==='fire'||p.kind==='spark')&&Math.random()<.8)parts.push({x:p.x+rr(1),y:p.y+rr(1),vx:rr(8),vy:rr(8)-6,life:.25,max:.25,col:Math.random()<.5?'#ff9a4a':'#ffd36a',size:1,g:0});
     if(p.kind==='arcane'&&Math.random()<.9)parts.push({x:p.x+rr(1),y:p.y+rr(1),vx:rr(6),vy:rr(6),life:.22,max:.22,col:Math.random()<.5?'#9fb7ff':'#e0d0ff',size:1,g:0});
     if((p.kind==='orb'||p.kind==='hex')&&Math.random()<.4)parts.push({x:p.x,y:p.y,vx:0,vy:0,life:.3,max:.3,col:'#9a5fe0',size:1,g:0});
@@ -105,7 +107,7 @@ function updateProj(dt){
     if(p.owner==='p'){const s=Math.hypot(p.vx,p.vy)||1;
       for(const e of enemies){if(e.dead||(p.hit&&p.hit.has(e)))continue;if(Math.hypot(p.x-e.x,p.y-ecy(e))<e.r+p.r+2){
         if(p.aoe){explodeP(p);p.dead=true;break}
-        dealDamage(e,p.dmg,p.comp?'comp':p.kind==='spark'?'spell':'proj',p.vx/s,p.vy/s);if(p.poison){e.poison=p.poison;e.pdps=p.pdps}if(p.slow){e.slow=Math.max(e.slow,1.5)}
+        dealDamage(e,p.dmg*(p.kind==='smite'&&e.f.ghostly?1.6:1),p.comp?'comp':(p.kind==='spark'||p.kind==='smite'||p.kind==='moon')?'spell':'proj',p.vx/s,p.vy/s);if(p.poison){e.poison=p.poison;e.pdps=p.pdps}if(p.slow){e.slow=Math.max(e.slow,1.5)}
         if(p.pierce)p.hit.add(e);else{p.dead=true;break}}}}
     else if(P.cmp&&P.cmp.down<=0&&!P.boat&&Math.hypot(p.x-P.cmp.x,p.y-(P.cmp.y-4))<P.cmp.r+p.r){hurtComp(p.dmg);p.dead=true}
     else if(Math.hypot(p.x-P.x,p.y-(P.y-5))<P.r+p.r){const s=Math.hypot(p.vx,p.vy)||1;if(hurtPlayer(p.dmg,p.vx/s,p.vy/s)){if(p.kind==='web'){P.slowT=1.6;text(P.x,P.y-26,'паутина','#e8e4da')}if(p.kind==='poison'){P.poison=3;P.pdps=p.dmg*.4}if(p.kind==='ice'){P.slowT=1.2;text(P.x,P.y-26,'холод','#a8d8ff')}if(p.kind==='fireb'){P.poison=2;P.pdps=p.dmg*.3}}p.dead=true}}
@@ -126,70 +128,10 @@ function updateMisc(dt){
   for(const b of bolts)b.life-=dt;bolts=bolts.filter(b=>b.life>0);
   for(const t of trails)t.life-=dt;trails=trails.filter(t=>t.life>0);
   for(const w of warns){w.t-=dt;if(w.t<=0){w.done=true;if(w.fn&&!(w.src&&w.src.dead))w.fn()}}warns=warns.filter(w=>!w.done);
-  for(const z of zones){z.t-=dt;z.tick-=dt;if(Math.random()<dt*30)parts.push({x:z.x+rr(z.r*.8),y:z.y+rr(z.r*.6)-30,vx:0,vy:200,life:.15,max:.15,col:'#e8e4da',size:1,g:0});
-    if(z.tick<=0){z.tick=.22;G.skMul=z.mul||1;forNear(z.x,z.y,z.r,e=>dealDamage(e,P.S.wdmg*.45,'proj'));G.skMul=1}}zones=zones.filter(z=>z.t>0);
-  G.smoke-=dt;if(G.smoke<=0){G.smoke=.35;HOUSES.forEach(h=>{if(Math.abs(h.x*16-P.x)<400)parts.push({x:h.x*16+50+rr(1),y:h.y*16-6,vx:4+rr(2),vy:-9,life:2.4,max:2.4,col:'rgba(225,225,235,.45)',size:2,g:0})})}
-  G.amb-=dt;if(G.amb<=0){G.amb=.12;const r=RG(P.x/16|0,P.y/16|0);
-    if(r===2||r===3)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:rr(6),vy:rr(6),life:3,max:3,col:r===2?'#e8f080':'#b0f060',size:1,g:0});
-    if(r===7)for(let i=0;i<3;i++)parts.push({x:P.x+rr(VW/2),y:P.y-VH/2+rr(20),vx:-6+rr(4),vy:22+rr(6),life:5,max:5,col:'rgba(255,255,255,.85)',size:1,g:0});
-    if(r===8)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:rr(4),vy:-14,life:2.5,max:2.5,col:Math.random()<.5?'#ff6a3a':'#ffb03a',size:1,g:0});
-    if(r===5)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:6+rr(3),vy:rr(1),life:4,max:4,col:'rgba(200,200,220,.18)',size:10,g:0})}}
-function spawnTick(dt){G.spawnT-=dt;if(G.spawnT>0)return;G.spawnT=2.2;if(G.inDun)return;if(P.boat||RG(P.x/16|0,P.y/16|0)===9)spawnSea();
-  REGIONS.forEach((R,ri)=>{if(!R.cap||R.sea)return;if(enemies.filter(e=>e.reg===ri).length<R.cap)spawnInRegion(ri,230)})}
-
-/* ----- world events ----- */
-const BOSS_INTRO={
-  crabking:[{who:'Краб-король',text:'Щёлк. ЩЁЛК! (Огромный краб с короной из ракушек поднимается из песка.)'}],
-  ila:[{who:'Ила',text:'Ещё один мокрый гость... Топь любит гостей. Особенно тех, кто не уходит.'}],
-  barracuda:[{who:'Капитан Барракуда',text:'Жемчужина? Моя! Как и твоя лодка, твоё золото и твои сапоги. Ребята, на абордаж!'}],
-  yeti:[{who:'Хрум',text:'Тёплый... Мягкий... Хрум давно не ел тёплых.'}],
-  ashlord:[{who:'Саламандра',text:'Морвен обещала мне все острова. Я начну с твоего.'}],
-  sam:[{who:'Одноглазый Сэм',text:'Нашёл мою пещеру, да? Отсюда никто не уходит. Ну, кроме меня.'}],
-  trollking:[{who:'Король троллей',text:'ГР-Р-РАХ! (Похоже, он не любит гостей.)'}],
-  morven:[{who:'Морвен',text:'Пять жемчужин... Ты принёс их сам. Как мило.'},{who:'Морвен',text:'Я — шторм. Я — глубина. Тону и ты.'}]};
-function activateShrine(s){s.active=true;sfx('boss');G.shake=.3;const sx=s.x*16+8,sy=s.y*16+8;
-  const b=spawn(s.boss,sx,sy-46,{lvl:s.lvl+ngOff(),wave:s.id});b.home={x:sx,y:sy};b.ag=true;b.cd=2;G.boss=b;burst(b.x,b.y-14,s.col,40,90,1);say(BOSS_INTRO[s.boss])}
-function bossDown(e){G.boss=null;G.shake=.6;sfx('rune');burst(e.x,ecy(e),'#f2c14e',40,90,1.2);
-  enemies.forEach(x=>{if(x.wave&&x.wave===e.wave&&!x.dead){x.dead=true;burst(x.x,x.y-5,'#9a8fa8',8,50,.4)}});
-  if(String(e.wave).startsWith('dun')){dunBossDown(e);return}
-  const s=SHRINES.find(s=>s.id===e.wave);if(s){s.active=false;s.done=true;grantRune(s)}}
-function grantRune(s){P.runes[s.id]=true;recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp;sfx('rune');burst(s.x*16+8,s.y*16,s.col,40,90,1.1);
-  const L={tide:'Жемчужина пахнет солёным ветром. Ты стал быстрее: +8% к скорости атаки и +4% к бегу.',mire:'Тёплый свет наполняет тело. Здоровье выросло на 12%.',gold:'Жемчужина блестит, как пиратское золото. +5% к шансу крита.',frost:'Холод бежит по пальцам. +5 к броне, иногда ты ускользаешь из-под удара, а удары могут заморозить врага.',fire:'Огонь отзывается в крови. Весь твой урон вырос на 10%.'};
-  const cnt=Object.values(P.runes).filter(Boolean).length,NR=SHRINES.length;save();
-  say([{who:s.name,text:L[s.id]},{who:`Жемчужины: ${cnt} из ${NR}`,text:cnt<NR?'Осталось святилищ: '+(NR-cnt)+'. Они мигают на карте.':'Все пять жемчужин у тебя. Далеко на юге из моря поднимается Затонувший храм.'}],()=>{if(cnt===NR)openGate()})}
-function openGate(silent){G.gateOpen=true;if(silent)return;G.shake=.5;sfx('boss');toast('Затонувший храм открыт. Плыви на юг от Тихой гавани.','#7fe0d0');save()}
-function bossCheck(){}
-function die(){G.state='dead';sfx('die');setTimeout(()=>{$('ovDead').hidden=false;$('bRespawn').focus()},500)}
-function respawn(){if(G.state!=='dead')return;$('ovDead').hidden=true;if(G.inDun)exitDungeon(true);const lost=Math.floor(P.gold*.2);P.gold-=lost;P.xp=Math.floor(P.xp*.85);
-  P.hp=P.S.maxHp;P.mp=P.S.maxMp;P.x=SPAWN.x;P.y=SPAWN.y;P.inv=1.5;P.kx=P.ky=0;P.poison=0;P.slowT=0;P.dash=0;P.boat=false;
-  enemies=enemies.filter(e=>!e.wave);SHRINES.forEach(s=>s.active=false);proj=[];warns=[];zones=[];G.boss=null;if(P.cmp)P.cmp.hp=P.cmp.maxHp;
-  G.cx=P.x-VW/2;G.cy=P.y-VH/2;G.state='play';if(lost)toast('Пропало золота: '+lost);save()}
-function openChest(c){c.open=true;sfx('item');burst(c.x,c.y-6,'#f2c14e',20,60,.6);const b=c.dun?2:1;
-  dropItem(genItem(c.lvl,{bias:b,minRar:1}),c.x,c.y+12);if(Math.random()<.5||c.dun)dropItem(genItem(c.lvl,{bias:1}),c.x,c.y+12);
-  pickups.push({k:'gold',v:c.lvl*8+rint(20),x:c.x,y:c.y+14,t:0});if(Math.random()<.5)pickups.push({k:'pot',kind:pick(['hp','mp']),x:c.x+rr(8),y:c.y+14,t:0});
-  const m=pick(Object.keys(MATS));pickups.push({k:'mat',m,v:2+rint(3),x:c.x+rr(8),y:c.y+14,t:0});
-  if(c.pearl&&!P.q.bp){P.q.bp=1;say([{who:'Сундук',text:'На дне сундука лежит чёрная жемчужина. От неё веет холодом, и кажется, что она шепчет.'},{who:'Подсказка',text:'Старая Илва с Мангровых топей или Отец Марин в деревне наверняка что-то о ней знают.'}])}save()}
-function restock(){P.stockLvl=P.lvl;P.stock=[];for(let i=0;i<3;i++)P.stock.push(genItem(P.lvl,{slot:'weapon',cls:P.cls,bias:.8}));['armor','amulet','ring'].forEach(s=>P.stock.push(genItem(P.lvl,{slot:s,bias:.8})))}
-/* ----- dialog with choices ----- */
-let D=null;
-function say(lines,onEnd){D={lines,i:0,onEnd,shown:0};G.state='dialog';$('dlg').hidden=false;document.body.classList.add('talking');showLine()}
-function showLine(){const l=D.lines[D.i];$('dWho').textContent=l.who;D.full=l.text;D.shown=0;$('dTxt').textContent='';$('dCh').innerHTML='';$('dCh').hidden=true;$('dMore').hidden=false}
-function showChoices(){const l=D.lines[D.i];if(!l.ch||!$('dCh').hidden)return;const box=$('dCh');box.innerHTML='';
-  l.ch.forEach((c,i)=>{const b=el('button','chbtn'+(c.no?' no':''),`<b>${i+1}</b> ${c.t}`);if(c.no)b.disabled=true;b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();choose(i)});box.appendChild(b)});box.hidden=false;$('dMore').hidden=true}
-function choose(i){if(!D)return;const l=D.lines[D.i];if(!l.ch||!l.ch[i]||l.ch[i].no)return;const c=l.ch[i];closeDlg();if(c.fn)c.fn()}
-function closeDlg(){D=null;$('dlg').hidden=true;document.body.classList.remove('talking');G.state='play';P.cd.atk=.3}
-function advance(){if(!D)return;if(D.shown<D.full.length){D.shown=D.full.length;$('dTxt').textContent=D.full;showChoices();return}
-  if(D.lines[D.i].ch)return;D.i++;if(D.i<D.lines.length)return showLine();const cb=D.onEnd;closeDlg();if(cb)cb()}
-function tickDialog(dt){if(!D)return;if(D.shown<D.full.length){D.shown=Math.min(D.full.length,D.shown+dt*60);$('dTxt').textContent=D.full.slice(0,D.shown|0);if(D.shown>=D.full.length)showChoices()}
-  if(D.lines[D.i].ch){for(let i=0;i<4;i++)if(actQ.has('skill'+i)&&$('dCh').hidden===false){choose(i);return}}
-  if(actQ.has('use')||actQ.has('attack'))advance()}
-$('dlg').addEventListener('pointerdown',e=>{e.preventDefault();advance()});
-const npcVisible=n=>!(n.cage&&P.q.pr===1);
-function findNear(){G.near=null;let best=24;
-  for(const n of NPCS){if(!npcVisible(n))continue;const d=Math.hypot(n.x-P.x,n.y-P.y);if(d<best){best=d;G.near={kind:'npc',...n,label:n.name}}}
-  if(!G.inDun)for(const s of SHRINES){if(s.active)continue;const x=s.x*16+8,y=s.y*16+10,d=Math.hypot(x-P.x,y-P.y);if(d<best+4){best=d;G.near={kind:'shrine',s,x,y:y-8,label:s.done?'Святилище':'Разбудить стража'}}}
-  for(const c of CHESTS){if(c.open)continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<best){best=d;G.near={kind:'chest',c,x:c.x,y:c.y,label:'Сундук'}}}
-  const tx=P.x/16|0,ty=P.y/16|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const t=at(tx+dx,ty+dy),x=(tx+dx)*16+8,y=(ty+dy)*16+8,d=Math.hypot(x-P.x,y-P.y);if(d>best)continue;
-    if(t===T.ENTRANCE&&!G.inDun){const en=ENTRANCES.find(e=>e.x===tx+dx&&e.y===ty+dy);if(en){best=d;G.near={kind:'entrance',en,x,y,label:DUNGEONS[en.id].n}}}
-    else if(t===T.STAIRS&&G.inDun){best=d;G.near={kind:'stairs',x,y,label:'Спуститься ниже'}}
-    else if(t===T.EXIT&&G.inDun){best=d;G.near={kind:'exit',x,y,label:'Выйти наружу'}}}}
+  for(const z of zones){z.t-=dt;z.tick-=dt;if(Math.random()<dt*30)parts.push(z.kind==='wild'?{x:z.x+rr(z.r*.8),y:z.y+rr(z.r*.6),vx:0,vy:-20,life:.5,max:.5,col:Math.random()<.5?'#7fe07a':'#c8ffb0',size:1,g:0}:{x:z.x+rr(z.r*.8),y:z.y+rr(z.r*.6)-30,vx:0,vy:200,life:.15,max:.15,col:'#e8e4da',size:1,g:0});
+    if(z.tick<=0){z.tick=.22;G.skMul=z.mul||1;if(z.kind==='wild'){forNear(z.x,z.y,z.r,e=>{dealDamage(e,5*P.S.sp,'spell');e.slow=Math.max(e.slow,.5)});if(Math.hypot(P.x-z.x,P.y-z.y)<z.r)P.hp=Math.min(P.S.maxHp,P.hp+P.S.maxHp*.015*(1+P.S.healP/100))}else forNear(z.x,z.y,z.r,e=>dealDamage(e,P.S.wdmg*.45,'proj'));G.skMul=1}}zones=zones.filter(z=>z.t>0);
+  G.amb-=dt;if(G.amb<=0){G.amb=.12;const z=ZID,nf=nightF();
+    if(z==='forest'||nf>.4)for(let i=0;i<(z==='forest'?1:0)+(nf>.4?1:0);i++)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:rr(5),vy:rr(5),life:3.5,max:3.5,col:Math.random()<.5?'#e8f080':'#cfffb0',size:1,g:0,glow:1});
+    if(z==='marsh')parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:5+rr(3),vy:rr(1),life:5,max:5,col:'rgba(210,220,230,.10)',size:14,g:0})}
+  for(const p of PROPS)if(p.fire&&Math.random()<dt*8&&Math.abs(p.x-P.x)<VW)parts.push({x:p.x+rr(4),y:p.y-6,vx:rr(4),vy:-24-Math.random()*14,life:.7,max:.7,col:Math.random()<.5?'#ffb03a':'#ff6a2a',size:1,g:0});}
+function spawnTick(dt){G.spawnT-=dt;if(G.spawnT>0)return;G.spawnT=2.4;if(ZONE&&ZONE.cap&&enemies.filter(e=>!e.wave&&!e.dead).length<ZONE.cap)spawnInZone(220)}

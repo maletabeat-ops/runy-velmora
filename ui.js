@@ -17,34 +17,34 @@ function hud(){
   const S=P.S;$('lvl').textContent=P.lvl;$('hpF').style.width=(P.hp/S.maxHp*100)+'%';$('hpT').textContent=Math.ceil(P.hp)+' / '+S.maxHp;
   $('mpF').style.width=(P.mp/S.maxMp*100)+'%';$('mpT').textContent=Math.floor(P.mp)+' / '+S.maxMp;$('xpF').style.width=(P.lvl>=MAXLV?100:P.xp/xpNeed(P.lvl)*100)+'%';$('clock').textContent=G.inDun?'Подземелье':(P.boat?'⚓ ':'')+clockName();const tp=talPts();$('bTal').classList.toggle('badge',tp>0);$('bTal').dataset.n=tp;$('gold').textContent=P.gold;
   $('hpF').parentNode.classList.toggle('poison',P.poison>0);
-  const rk=SHRINES.map(s=>+P.runes[s.id]).join('');if(rk!==lastR){lastR=rk;const R=$('runes');R.innerHTML='';SHRINES.forEach(s=>{const e=el('span',P.runes[s.id]?'on':'');e.style.color=s.col;e.title=s.name;R.appendChild(e)})}
+  $('runes').textContent=P.statPts>0?`+${P.statPts} очк.`:'';
   const c=CLS[P.cls];
   slotEls.atk.querySelector('.cd').style.height=(P.cd.atk>0?Math.min(1,P.cd.atk/.5)*100:0)+'%';
   c.sk.forEach((s,i)=>{const b=slotEls['s'+i];b.classList.toggle('locked',P.lvl<s.lv);b.classList.toggle('nomana',P.mp<s.mp);b.querySelector('.cd').style.height=(P.scd[i]/s.cd*100)+'%'});
   ['hp','mp'].forEach(k=>{const b=slotEls[k];b.querySelector('.n').textContent=P.pots[k];b.classList.toggle('locked',P.pots[k]<=0);b.querySelector('.cd').style.height=(P.cd.pot*100)+'%'});
-  const left=SHRINES.filter(s=>!s.done).length;
-  const q=G.won?['Шторм рассеян','Ищи легендарки или начни «Новую игру+»']:G.quest===0?['Задание','Поговори с капитаном Брандтом']:left?[`Жемчужины: ${SHRINES.length-left} из ${SHRINES.length}`,'Алтари мигают на карте']:['Храм открыт','Затонувший храм к югу от Тихой гавани'];
+  const q=[QST[P.st||0].t,qText(P.st||0)];
+
   const b=P.bounty,B=BOUNTIES[b.i];const bq=b.active&&B?`${B.t}: ${Math.min(b.prog,B.n)} / ${B.n}`:'';
   const qs=q.join('|')+bq;if(qs!==lastQ){lastQ=qs;const Q=$('quest');Q.innerHTML='';Q.append(el('small','',q[0]),q[1]);if(bq){Q.append(el('small','b','Охота'),bq)}}
   const bo=G.boss&&!G.boss.dead?G.boss:null;$('boss').hidden=!bo;if(bo){$('bossN').textContent=bo.f.n;$('bossF').style.width=(Math.max(0,bo.hp)/bo.maxHp*100)+'%'}
-  drawMini($('mm').getContext('2d'),1)}
-function drawMini(m,s){m.imageSmoothingEnabled=false;m.drawImage(mmBase,0,0,W*s,H*s);m.drawImage(fogCv,0,0,W*s,H*s);const bl=(G.time*3|0)%2;
-  const mark=(x,y,c,z=3)=>{if(!explored[y*W+x]&&s===1)return;m.fillStyle=c;m.fillRect((x-1)*s,(y-1)*s,z*s,z*s)};
-  if(!G.inDun){SHRINES.forEach(sh=>{if(!sh.done&&(bl||s>1))mark(sh.x,sh.y,sh.col)});ENTRANCES.forEach(e=>{if(explored[e.y*W+e.x]||s>1&&e.id==='temple'&&G.gateOpen)mark(e.x,e.y,'#ff6aff',2)})}
-  if(s>1)CHESTS.forEach(c=>{if(!c.open&&explored[c.ty*W+c.tx])mark(c.tx,c.ty,'#f2c14e',2)});
-  if(G.quest===0&&bl&&!G.inDun){m.fillStyle='#f2c14e';m.fillRect(71*s,59*s,3*s,3*s)}
-  if(G.gateOpen&&!G.won&&(bl||s>1)){m.fillStyle='#c48aff';m.fillRect((GATE.x-1)*s,(GATE.y-1)*s,3*s,3*s)}
+  drawMini($('mm').getContext('2d'),+$('mm').dataset.k||2)}
+function drawMini(m,s){m.imageSmoothingEnabled=false;m.clearRect(0,0,m.canvas.width,m.canvas.height);m.drawImage(mmBase,0,0,W*s,H*s);m.drawImage(fogCv,0,0,W*s,H*s);const bl=(G.time*3|0)%2;
+  const mark=(x,y,c,z=3)=>{m.fillStyle=c;m.fillRect((x-1)*s,(y-1)*s,z*s,z*s)};
+  for(const e of EXITS)mark((e.x0+e.x1)/2,(e.y0+e.y1)/2,'#f2d48a',2);
+  for(const n of NPCS)if(npcHas(n)&&(bl||s>1))mark(n.x/16|0,n.y/16|0,'#f2d48a');
+  const goal=questGoal();if(goal&&(bl||s>1))mark(goal.x/16|0,goal.y/16|0,'#8fb8ff');
   m.fillStyle='#fff';m.fillRect(((P.x/16|0)-1)*s,((P.y/16|0)-1)*s,2*s+1,2*s+1)}
 
 /* ----- inventory & shop ----- */
 let INV={mode:null,sel:null};
 function openInv(mode){INV.mode=mode||null;INV.sel=null;G.state='menu';$('ovInv').hidden=false;renderInv()}
-function closeOv(){['ovInv','ovMap','ovMenu','ovTal'].forEach(i=>$(i).hidden=true);if(G.state==='menu')G.state='play';save()}
+function closeOv(){['ovInv','ovMap','ovMenu','ovTal','ovChar','ovJour'].forEach(i=>$(i).hidden=true);if(G.state==='menu')G.state='play';save()}
 function cell(it,onClick,selected,label){const b=el('button','cell'+(it?' r'+it.rar:' empty')+(selected?' sel':''));
   if(it){const img=el('img');img.src=itemIcon(it);img.alt='';b.appendChild(img);if(it.slot==='weapon'&&it.cls!==P.cls)b.classList.add('wrong')}
   else if(label)b.appendChild(el('span','lbl',label));b.addEventListener('click',onClick);return b}
-function statLines(){const S=P.S,red=Math.round(S.armor/(S.armor+50)*100),c=CLS[P.cls];
-  const L=[['Здоровье',S.maxHp],['Мана',S.maxMp],['Урон оружия',Math.round(S.wdmg)],['Сила магии',Math.round(S.sp*100)+'%'],['Броня',`${S.armor} (−${red}% урона)`],['Шанс крита',S.crit+'%'],['Скорость атаки','+'+S.as+'%'],['Скорость бега','+'+S.ms+'%'],['Мана в секунду',S.mpr.toFixed(1)]];
+function statLines(){const S=P.S,red=Math.round(S.armor/(S.armor+80)*100);
+  const L=[['Здоровье',S.maxHp],['Мана',S.maxMp],['Урон оружия',Math.round(S.wdmg)],['Сила магии',Math.round(S.sp*100)+'%'],['Броня',`${S.armor} (−${red}% урона)`],['Шанс крита',S.crit.toFixed(1)+'%'],['Уворот',S.dodge.toFixed(1)+'%'],['Скорость атаки','+'+S.as+'%'],['Скорость бега','+'+S.ms+'%'],['Мана в секунду',S.mpr.toFixed(1)],['Лечение','+'+Math.round(S.healP)+'%']];
+  if(S.hpr)L.push(['Здоровье в секунду',S.hpr.toFixed(1)]);
   if(S.ls)L.push(['Вампиризм',S.ls+'%']);if(S.dmgP)L.push(['Бонус урона','+'+S.dmgP+'%']);return L}
 function itemHTML(it){const r=RAR[it.rar];let h=`<div class="iname" style="color:${r.c}">${it.name}</div><div class="imeta">${r.n} · ${itemType(it)} · ур. ${it.lvl}</div>`;
   if(it.slot==='weapon'&&it.cls!==P.cls)h+=`<div class="warnl">Только для класса «${CLS[it.cls].n}»</div>`;
@@ -84,21 +84,21 @@ function equip(i){const it=P.bag[i];if(it.slot==='weapon'&&it.cls!==P.cls)return
   if(it.slot==='weapon')$('hotbar').querySelector('.s-attack img').src=ICON[weaponIcon(P.cls)];INV.sel={src:'eq',k:it.slot};renderInv()}
 
 /* ----- big map ----- */
-function openMap(){G.state='menu';$('ovMap').hidden=false;const c=$('bigmap'),m=c.getContext('2d');m.clearRect(0,0,c.width,c.height);drawMini(m,4);
-  const L=$('mapLabels');L.innerHTML='';if(!G.inDun)REGIONS.forEach((R,i)=>{if(!R.lab)return;const[x,y]=R.lab;if(!explored[y*W+x]&&i!==1)return;const d=el('div','mlab',`${R.n}${R.lv?`<small>ур. ${R.lv[0]}–${R.lv[1]}</small>`:''}`);d.style.left=(x/W*100)+'%';d.style.top=(y/H*100)+'%';L.appendChild(d)})}
+function openMap(){G.state='menu';$('ovMap').hidden=false;const c=$('bigmap'),kk=Math.floor(Math.min(640/W,480/H));c.width=W*kk;c.height=H*kk;const m=c.getContext('2d');drawMini(m,kk);
+  const L=$('mapLabels');L.innerHTML='';const d=el('div','mlab',`${ZONE.n}<small>ур. ${ZONE.lv[0]+ngOff()}–${ZONE.lv[1]+ngOff()}</small>`);d.style.left='50%';d.style.top='6%';L.appendChild(d)}
 
 function showWin(){G.state='win';const m=Math.floor(G.time/60),s=Math.floor(G.time%60);const ws=$('winStats');ws.innerHTML='';
-  $('bNG').textContent=`Новая игра+ ${(G.ng||0)+1}`;[[m+':'+String(s).padStart(2,'0'),'время'],[P.lvl,'уровень'],[G.kills,'побеждено'],[P.gold,'золота']].forEach(([v,l])=>{const d=el('div','',String(v));d.appendChild(el('span','',l));ws.appendChild(d)});$('ovWin').hidden=false}
+  [[m+':'+String(s).padStart(2,'0'),'время'],[P.lvl,'уровень'],[G.kills,'побеждено'],[P.gold,'золота']].forEach(([v,l])=>{const d=el('div','',String(v));d.appendChild(el('span','',l));ws.appendChild(d)});$('ovWin').hidden=false}
 
 /* ----- main update ----- */
 function update(dt){
   G.time+=dt;G.shake=Math.max(0,G.shake-dt);
   updatePlayer(dt);if(G.state!=='play')return;
-  if(!G.inDun)G.clock=(G.clock||0)+dt;updateEnemies(dt);updateProj(dt);updateMisc(dt);spawnTick(dt);updateComp(dt);townTick(dt);if(G.inDun)dungeonTick(dt);if(G.state!=='play')return;
+  G.clock=(G.clock||0)+dt;G.rcT-=dt;if(G.rcT<=0){G.rcT=1;recalc()}checkExits();updateEnemies(dt);updateProj(dt);updateMisc(dt);spawnTick(dt);updateComp(dt);townTick(dt);if(G.inDun)dungeonTick(dt);if(G.state!=='play')return;
   findNear();if(actQ.has('use')&&G.near)interact(G.near);
-  if(actQ.has('inv'))openInv();else if(actQ.has('map'))openMap();else if(actQ.has('tal'))openTal();
+  if(actQ.has('inv'))openInv();else if(actQ.has('map'))openMap();else if(actQ.has('tal'))openTal();else if(actQ.has('char'))openChar();else if(actQ.has('jour'))openJournal();
   G.fogT-=dt;if(G.fogT<=0){G.fogT=.25;reveal(P.x/16|0,P.y/16|0,9)}
-  const r=RG(P.x/16|0,P.y/16|0);if(r!==G.regionCur){G.regionCur=r;const R=REGIONS[r];const b=$('region');const nm=G.inDun?DUNGEONS[G.dun.id].n:R.n,sub=G.inDun?`этаж ${G.dun.floor} из ${DUNGEONS[G.dun.id].floors}`:R.sea?`ур. ~${seaLv(P.x,P.y)}`:R.lv?`ур. ${R.lv[0]+ngOff()}–${R.lv[1]+ngOff()}`:'безопасно';b.innerHTML=`${nm}<small>${sub}</small>`;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
+  if(G.regionCur!==ZID){G.regionCur=ZID;const b=$('region');b.innerHTML=`${ZONE.n}<small>${ZONE.safe?'безопасно':`ур. ${ZONE.lv[0]+ngOff()}–${ZONE.lv[1]+ngOff()}`}</small>`;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
   G.saveT-=dt;if(G.saveT<=0){G.saveT=20;save()}
   if(G.winT>0){G.winT-=dt;if(G.winT<=0)showWin()}}
 
@@ -115,18 +115,19 @@ cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){toWorld(e);G.m
 const jEnd=e=>{if(e.pointerType==='mouse'){down.delete('Mouse'+e.button);return}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.hidden=true}else touchAtk=false};
 cv.addEventListener('pointerup',jEnd);cv.addEventListener('pointercancel',jEnd);cv.addEventListener('contextmenu',e=>e.preventDefault());
 $('dlg').addEventListener('pointerdown',e=>{e.preventDefault();advance()});
-$('bBag').addEventListener('click',()=>{if(G.state==='play')openInv()});$('bTal').addEventListener('click',()=>openTal());$('talClose').addEventListener('click',closeOv);$('bNG').addEventListener('click',()=>startNG());$('bMap').addEventListener('click',()=>{if(G.state==='play')openMap()});
+$('bBag').addEventListener('click',()=>{if(G.state==='play')openInv()});$('bTal').addEventListener('click',()=>openTal());$('talClose').addEventListener('click',closeOv);$('bChar').addEventListener('click',()=>openChar());$('bJour').addEventListener('click',()=>openJournal());$('charClose').addEventListener('click',closeOv);$('jourClose').addEventListener('click',closeOv);$('bMap').addEventListener('click',()=>{if(G.state==='play')openMap()});
 $('invClose').addEventListener('click',closeOv);$('mapClose').addEventListener('click',closeOv);
 $('bRespawn').addEventListener('click',respawn);
 $('bRoam').addEventListener('click',()=>{$('ovWin').hidden=true;G.state='play'});
 
 /* ----- boot ----- */
-resize();genMap();renderWorld();buildMM();
+resize();
 let lastT=performance.now(),titleCam=0;
 function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(typeof musicTick==="function")musicTick(dt);
   if(G.state==='play'){try{update(dt)}catch(err){console.error(err)}}else if(G.state==='dialog'){tickDialog(dt);updateMisc(0)}
-  if(G.state==='title'){titleCam+=dt*14;ctx.fillStyle='#0f0d14';ctx.fillRect(0,0,VW,VH);const x=clamp(500+titleCam%1200,0,WW-VW),y=clamp(640,0,WH-VH);ctx.drawImage(worldCv,x,y,VW,VH,0,0,VW,VH);ctx.drawImage(vg,0,0)}
+  if(G.state==='title'){titleCam+=dt;try{renderTitle(titleCam)}catch(err){console.error(err)}}
   else{try{render(dt);if(P&&G.state!=='win')hud()}catch(err){console.error(err)}}
   actQ.clear();requestAnimationFrame(frame)}
-requestAnimationFrame(frame);
-window.__vel={get P(){return P},G,spawn,genItem,dropItem,openGate,get enemies(){return enemies}};
+window.__vel={get P(){return P},G,spawn,genItem,dropItem,get enemies(){return enemies}};
+
+function questGoal(){const s=P.st||0;if(s===1&&ZID==='forest')return ZPOINTS.shard;if(s===1&&ZID==='village')return ZPOINTS.n;if(s===7&&ZID==='marsh')return ZPOINTS.arena;if(s===6&&ZID==='marsh')return ZPOINTS.camp;if((s===4||s===5)&&ZID==='forest')return s===5?ZPOINTS.e:null;if(s===5&&ZID==='village')return ZPOINTS.n;if((s===6||s===7)&&ZID==='forest')return ZPOINTS.e;return null}

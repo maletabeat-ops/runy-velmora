@@ -21,8 +21,7 @@ document.querySelectorAll('[data-ico]').forEach(b=>{const i=el('img','mico');i.s
 /* ----- music ----- */
 const TRACKS={menu:'music/menu.mp3',village:'music/village.mp3',wild:'music/wild.mp3',dark:'music/dark.mp3',boss:'music/boss.mp3'};
 const MUS={cur:null,a:null,old:[],unlocked:false};
-function wantTrack(){if(G.state==='title')return'menu';if(!P)return'menu';if(G.boss&&!G.boss.dead)return'boss';const r=RG(P.x/16|0,P.y/16|0);
-  if(G.inDun)return'dark';if(r===1)return'village';if(r===3||r===5||r===8)return'dark';return'wild'}
+function wantTrack(){if(G.state==='title')return'menu';if(!P||!ZONE)return'menu';if(G.boss&&!G.boss.dead)return'boss';return ZONE.music||'wild'}
 function musicTick(dt){if(!MUS.unlocked)return;const want=wantTrack(),vol=muted?0:SET.music;
   if(want!==MUS.cur){if(MUS.a)MUS.old.push(MUS.a);MUS.cur=want;try{const a=new Audio(TRACKS[want]);a.loop=true;a.volume=0;a.play().catch(()=>{});MUS.a=a}catch(_){MUS.a=null}}
   if(MUS.a)MUS.a.volume=Math.min(vol,MUS.a.volume+dt*.5*Math.max(.05,vol))*(vol>0?1:0);
@@ -56,8 +55,8 @@ function mountSettings(where){$(where).appendChild($('setBlock'));syncSet();rend
 /* ----- main menu ----- */
 function showScreen(id){['mmMain','mmNew','mmSet'].forEach(s=>$(s).hidden=s!==id)}
 function showMain(){G.state='title';$('hud').hidden=true;$('ovTitle').hidden=false;['ovMenu','ovWin','ovDead','ovInv','ovMap'].forEach(i=>$(i).hidden=true);$('dlg').hidden=true;
-  const sv=loadSave();$('mContinue').hidden=!sv;if(sv)$('mContInfo').textContent=`${(RACES[sv.race]||RACES.human).n}, ${CLS[sv.cls].n}, ур. ${sv.lvl}`;
-  $('mLogo').src=bigURL(heroSpr(sv?sv.cls:'mage',sv&&sv.race||'human'),6);showScreen('mmMain')}
+  const sv=loadSave();$('mContinue').hidden=!sv;if(sv&&CLS[sv.cls]&&RACES[sv.race])$('mContInfo').textContent=`${RACES[sv.race].n}, ${CLS[sv.cls].n}, ур. ${sv.lvl}`;else $('mContinue').hidden=true;
+  $('mLogo').src=artURL(sv&&RACES[sv.race]?RACES[sv.race].spr:'hare',3);showScreen('mmMain')}
 $('mContinue').addEventListener('click',()=>{const sv=loadSave();if(sv)beginGame(sv.cls,sv.race,sv)});
 $('mNew').addEventListener('click',()=>{NG.armed=false;renderNew();showScreen('mmNew')});
 $('mSettings').addEventListener('click',()=>{mountSettings('mmSetBody');showScreen('mmSet')});
@@ -65,17 +64,18 @@ $('mExit').addEventListener('click',exitGame);
 document.querySelectorAll('.mback').forEach(b=>b.addEventListener('click',()=>showScreen('mmMain')));
 
 /* ----- new hero ----- */
-const NG={cls:'mage',race:'human',armed:false};
-function previewStats(cls,race){const c=CLS[cls],b=(RACES[race]||RACES.human).b;
-  return[['Здоровье',Math.round(c.hp*(1+(b.hpP||0)/100))],['Мана',Math.round(c.mp*(1+(b.mpP||0)/100))],['Урон оружия',Math.round(c.w.dmg*(1+(b.dmgP||0)/100))],['Сила магии',Math.round(c.sp*100)+'%'],
-    ['Броня',c.armor+(b.armor||0)],['Шанс крита',(c.crit+(b.crit||0))+'%'],['Скорость',Math.round(c.ms*(1+(b.ms||0)/100))],['Уворот',(b.dodge||0)+'%']]}
+const NG={cls:'ranger',race:'hare',armed:false};
+function previewStats(cls,race){const c=CLS[cls],R=RACES[race],s=R.st;
+  return[['Здоровье',Math.round(c.hp+s.vit*5+s.str)],['Мана',Math.round(c.mp+s.int*2+s.spi*2)],['Урон оружия',Math.round(c.w.dmg*(1+(c.scale==='dex'?s.dex:c.scale==='str'?s.str:s.int)*.02))],['Сила магии',Math.round(c.sp*(1+s.int*.03)*100)+'%'],
+    ['Броня',Math.round(c.armor+s.vit*.3+(R.b.armor||0))],['Шанс крита',(5+s.dex*.5).toFixed(1)+'%'],['Уворот',(s.dex*.3).toFixed(1)+'%'],['Скорость',Math.round(c.ms*(1+(R.b.ms||0)/100))]]}
 function renderNew(){const c=CLS[NG.cls],r=RACES[NG.race];
-  $('pvImg').src=bigURL(heroSpr(NG.cls,NG.race),7);$('pvName').textContent=`${r.n} · ${c.n}`;
+  $('pvImg').src=artURL(r.spr,3);$('pvName').textContent=`${r.n} · ${c.n}`;
   const st=$('pvStats');st.innerHTML='';previewStats(NG.cls,NG.race).forEach(([a,b])=>st.append(el('dt','',a),el('dd','',String(b))));
-  const cc=$('clsChips');cc.innerHTML='';Object.keys(CLS).forEach(k=>{const b=el('button','chip'+(k===NG.cls?' on':''));const i=el('img');i.src=bigURL(heroSpr(k,NG.race),2);i.alt='';b.append(i,CLS[k].n);b.addEventListener('click',()=>{NG.cls=k;renderNew()});cc.appendChild(b)});
+  const sts=$('pvAttr');sts.innerHTML='';STATS.forEach(k=>{const d=el('div','pip',`<span>${STATN[k]}</span><b>${r.st[k]}</b>`);sts.appendChild(d)});
+  const cc=$('clsChips');cc.innerHTML='';Object.keys(CLS).forEach(k=>{const b=el('button','chip'+(k===NG.cls?' on':''));const i=el('img');i.src=ICON[CLS[k].w.icon]||ICON.sword;i.alt='';b.append(i,CLS[k].n);b.addEventListener('click',()=>{NG.cls=k;renderNew()});cc.appendChild(b)});
   $('clsDesc').textContent=c.d;$('clsSk').innerHTML=c.sk.map(s=>`<li><span style="color:${s.col}">${s.ic}</span> ${s.n} <small>ур. ${s.lv} · ${s.d}</small></li>`).join('');
-  const rc=$('raceChips');rc.innerHTML='';Object.keys(RACES).forEach(k=>{const b=el('button','chip'+(k===NG.race?' on':''));const i=el('img');i.src=bigURL(heroSpr(NG.cls,k),2);i.alt='';b.append(i,RACES[k].n);b.addEventListener('click',()=>{NG.race=k;renderNew()});rc.appendChild(b)});
-  $('raceDesc').textContent=r.d;
+  const rc=$('raceChips');rc.innerHTML='';Object.keys(RACES).forEach(k=>{const b=el('button','chip'+(k===NG.race?' on':''));const i=el('img');i.src=artURL(RACES[k].por,1);i.alt='';b.append(i,RACES[k].n);b.addEventListener('click',()=>{NG.race=k;renderNew()});rc.appendChild(b)});
+  $('raceDesc').textContent=r.d+' Особенность: '+r.perk;
   const sv=loadSave();$('ngStart').textContent=NG.armed?'Точно? Старый герой пропадёт':'В путь';$('ngStart').classList.toggle('warn',NG.armed);$('ngWarn').hidden=!sv}
 $('ngStart').addEventListener('click',()=>{if(loadSave()&&!NG.armed){NG.armed=true;renderNew();return}beginGame(NG.cls,NG.race,null)});
 
@@ -83,15 +83,15 @@ $('ngStart').addEventListener('click',()=>{if(loadSave()&&!NG.armed){NG.armed=tr
 function beginGame(cls,race,sv){unlockAudio();if(SET.autoFull)enterFull();
   if(sv)applySave(sv);else{G.ng=0;newGame(cls,race)}spawnComp();
   $('ovTitle').hidden=true;$('hud').hidden=false;buildHotbar();lastQ='';lastR='';G.state='play';G.cx=P.x-VW/2;G.cy=P.y-VH/2;G.regionCur=-1;
-  if(!sv){save();setTimeout(()=>toast('Поговори с капитаном Брандтом. Подойди и нажми E'),600)}else toast('С возвращением в Вельмор!')}
+  if(!sv){save();setTimeout(()=>toast('Поговори с Ирэль у дома на дереве. Подойди и нажми E'),600)}else toast('С возвращением, Хранитель!')}
 function openMenu(){if(G.state!=='play')return;G.state='menu';capture=null;$('ovMenu').hidden=false;mountSettings('pSet');
-  const R=RACES[P.race]||RACES.human,t=Math.floor(G.time/60);$('pHero').textContent=`${R.n} · ${CLS[P.cls].n} · ур. ${P.lvl} · жемчужин ${Object.values(P.runes).filter(Boolean).length} из ${SHRINES.length}${G.ng?` · НИ+${G.ng}`:''} · в пути ${t} мин`}
+  const R=RACES[P.race],t=Math.floor(G.time/60);$('pHero').textContent=`${R.n} · ${CLS[P.cls].n} · ур. ${P.lvl} · ${QST[P.st||0].t} · в пути ${t} мин`}
 $('pResume').addEventListener('click',()=>{capture=null;closeOv();if(SET.autoFull)enterFull()});
 $('pFull').addEventListener('click',()=>{toggleFull()});
-$('pMain').addEventListener('click',()=>{if(G.inDun)exitDungeon();save();capture=null;showMain()});
+$('pMain').addEventListener('click',()=>{save();capture=null;loadZone('village','spawn');showMain()});
 $('pExit').addEventListener('click',exitGame);
 $('bMenu').addEventListener('click',()=>openMenu());
-$('bRestart').addEventListener('click',()=>showMain());
+$('bRestart').addEventListener('click',()=>{loadZone('village','spawn');showMain()});
 syncSet();
 $('bFull').addEventListener('click',toggleFull);
-showMain();
+loadArt().then(()=>{loadZone('village','spawn');showMain();requestAnimationFrame(frame)});
