@@ -1,6 +1,6 @@
 'use strict';
 /* ===== ai: enemies, bosses, projectiles, world events, NPCs ===== */
-function eshoot(e,kind,ux,uy,spd){const S={arrow:[150,1,2.2,2],web:[110,.6,2,3],hex:[85,1,3.6,4],orb:[70,1,4,4],poison:[90,.8,3,4],rock:[130,1,2,4],ice:[120,1,2.4,3],fireb:[115,1,2.6,3]}[kind];
+function eshoot(e,kind,ux,uy,spd){const S={arrow:[150,1,2.2,2],web:[110,.6,2,3],hex:[85,1,3.6,4],orb:[70,1,4,4],poison:[90,.8,3,4],rock:[130,1,2,4],bullet:[175,1,1.6,2],ice:[120,1,2.4,3],fireb:[115,1,2.6,3]}[kind];
   proj.push({x:e.x+ux*6,y:ecy(e)+uy*6,vx:ux*(spd||S[0]),vy:uy*(spd||S[0]),life:S[2],owner:'e',kind,dmg:Math.max(1,Math.round(e.dmg*S[1])),r:S[3],homing:kind==='hex'})}
 const eshootA=(e,kind,a,spd)=>eshoot(e,kind,Math.cos(a),Math.sin(a),spd);
 function blinkNear(e){for(let i=0;i<20;i++){const a=Math.random()*6.283,r=60+Math.random()*40,x=P.x+Math.cos(a)*r,y=P.y+Math.sin(a)*r;
@@ -23,8 +23,8 @@ const BOSS={
     if(d<e.r+P.r+6&&e.acd<=0){meleeWind(e,e.r+P.r+6,.3,1);return[0,0]}
     if(e.cd<=0){e.cd=enr?1.9:2.9;const a=Math.atan2(P.y-e.y,P.x-e.x),L=130;e.wind=.6;sfx('growl');
       warn({kind:'line',x:e.x,y:e.y,a,len:L,w:16,t:.6,src:e});e.onWind=()=>{e.leap=.4;e.leapHit=false;e.lvx=Math.cos(a)*L/.4;e.lvy=Math.sin(a)*L/.4};return[0,0]}
-    if(e.sc<=0){e.sc=enr?7:10;const n=enemies.filter(x=>x.wave===e.wave&&x!==e&&!x.dead).length;text(e.x,ecy(e)-20,'Ау-у-у!','#c9c2b2',true);
-      for(let k=0;k<2&&n+k<3;k++){const x=e.x+rr(24),y=e.y+rr(24);if(!blocked(x,y,6,'e')){const w=spawn('wolf',x,y,{lvl:5,wave:e.wave});w.ag=true}}}
+    if(e.sc<=0){e.sc=enr?7:10;const n=enemies.filter(x=>x.wave===e.wave&&x!==e&&!x.dead).length;text(e.x,ecy(e)-20,'ЩЁЛК!','#c9c2b2',true);
+      for(let k=0;k<2&&n+k<3;k++){const x=e.x+rr(24),y=e.y+rr(24);if(!blocked(x,y,6,'e')){const w=spawn((e.f.adds||['crab'])[0],x,y,{lvl:e.lvl-1,wave:e.wave});w.ag=true}}}
     return[ux*sp*.85,uy*sp*.85]},
   grokk(e,dt,d,ux,uy,sp){e.sc-=dt;const enr=e.hp<e.maxHp*.35;
     if(e.cd<=0){e.pat=(e.pat||0)+1;
@@ -32,7 +32,7 @@ const BOSS={
         const dd=Math.hypot(P.x-e.x,P.y-e.y)||1;if(dd<52+P.r)hurtPlayer(e.dmg,(P.x-e.x)/dd,(P.y-e.y)/dd,thornsRef(e));if(enr)for(let i=0;i<10;i++)eshootA(e,e.f.shard||'rock',i/10*6.283,110)}})}
       else{e.cd=3;const a=Math.atan2(P.y-e.y,P.x-e.x);e.wind=.75;warn({kind:'line',x:e.x,y:e.y,a,len:170,w:24,t:.75,src:e});e.onWind=()=>{e.leap=.5;e.leapHit=false;e.lvx=Math.cos(a)*340;e.lvy=Math.sin(a)*340}}
       return[0,0]}
-    if(e.sc<=0){e.sc=12;text(e.x,ecy(e)-24,e.type==='yeti'?'Х-Р-Р-ОМ!':'Гоблины! Бить!','#f2c14e',true);const ad=e.f.adds||['goblin'];for(let k=0;k<2;k++){const x=e.x+rr(30),y=e.y+rr(30);if(!blocked(x,y,6,'e')){const g=spawn(ad[k%ad.length],x,y,{lvl:e.lvl-2,wave:e.wave});g.ag=true}}}
+    if(e.sc<=0){e.sc=12;text(e.x,ecy(e)-24,e.type==='yeti'||e.type==='trollking'?'Х-Р-Р-ОМ!':'Свистать всех наверх!','#f2c14e',true);const ad=e.f.adds||['goblin'];for(let k=0;k<2;k++){const x=e.x+rr(30),y=e.y+rr(30);if(!blocked(x,y,6,'e')){const g=spawn(ad[k%ad.length],x,y,{lvl:e.lvl-2,wave:e.wave});g.ag=true}}}
     return[ux*sp,uy*sp]},
   queen(e,dt,d,ux,uy,sp){e.sc-=dt;const enr=e.hp<e.maxHp*.4;
     const thr=[.75,.5,.25];e.si=e.si||0;if(e.si<3&&e.hp<e.maxHp*thr[e.si]){e.si++;text(e.x,ecy(e)-24,'БУЛЬК!','#e87ab8',true);
@@ -64,7 +64,8 @@ function updateEnemies(dt){
     if(d>520&&!e.f.boss&&!e.wave)continue;
     e.t+=dt;e.flash-=dt;e.slow-=dt;e.cd-=dt;e.acd-=dt;e.wt-=dt;if(e.swing>0)e.swing-=dt;
     if(e.poison>0){e.poison-=dt;e.ptk-=dt;if(e.ptk<=0){e.ptk=.5;dealDamage(e,e.pdps*.5,'dot');if(e.dead)continue}}
-    const ux=dx/d,uy=dy/d,mode=e.f.ai==='ghost'?'ghost':'e';
+    if(e.f.sea&&e.reg===9&&d>800){e.dead=true;continue}
+    const ux=dx/d,uy=dy/d,mode=e.f.sea?'sea':e.f.ai==='ghost'?'ghost':'e';
     const sp=e.spd*(e.slow>0?e.slowF:1)*(mode==='e'&&at(e.x/16|0,e.y/16|0)===T.MUD?.7:1);
     const ar=e.f.ai==='ghost'?140:e.elite?135:115;
     if(!e.ag&&(d<ar||e.wave))e.ag=true;if(e.ag&&!e.wave&&!e.f.boss&&d>260)e.ag=false;
@@ -104,14 +105,16 @@ function updateProj(dt){
     if(p.owner==='p'){const s=Math.hypot(p.vx,p.vy)||1;
       for(const e of enemies){if(e.dead||(p.hit&&p.hit.has(e)))continue;if(Math.hypot(p.x-e.x,p.y-ecy(e))<e.r+p.r+2){
         if(p.aoe){explodeP(p);p.dead=true;break}
-        dealDamage(e,p.dmg,p.kind==='spark'?'spell':'proj',p.vx/s,p.vy/s);if(p.poison){e.poison=p.poison;e.pdps=p.pdps}if(p.slow){e.slow=Math.max(e.slow,1.5)}
+        dealDamage(e,p.dmg,p.comp?'comp':p.kind==='spark'?'spell':'proj',p.vx/s,p.vy/s);if(p.poison){e.poison=p.poison;e.pdps=p.pdps}if(p.slow){e.slow=Math.max(e.slow,1.5)}
         if(p.pierce)p.hit.add(e);else{p.dead=true;break}}}}
+    else if(P.cmp&&P.cmp.down<=0&&!P.boat&&Math.hypot(p.x-P.cmp.x,p.y-(P.cmp.y-4))<P.cmp.r+p.r){hurtComp(p.dmg);p.dead=true}
     else if(Math.hypot(p.x-P.x,p.y-(P.y-5))<P.r+p.r){const s=Math.hypot(p.vx,p.vy)||1;if(hurtPlayer(p.dmg,p.vx/s,p.vy/s)){if(p.kind==='web'){P.slowT=1.6;text(P.x,P.y-26,'паутина','#e8e4da')}if(p.kind==='poison'){P.poison=3;P.pdps=p.dmg*.4}if(p.kind==='ice'){P.slowT=1.2;text(P.x,P.y-26,'холод','#a8d8ff')}if(p.kind==='fireb'){P.poison=2;P.pdps=p.dmg*.3}}p.dead=true}}
   proj=proj.filter(p=>!p.dead)}
 function updateMisc(dt){
   for(const k of pickups){k.t+=dt;const dx=P.x-k.x,dy=P.y-k.y,d=Math.hypot(dx,dy)||1;const mag=k.k==='item'?0:30;
     if(d<mag){k.x+=dx/d*120*dt;k.y+=dy/d*120*dt}
     if(d<9){if(k.k==='gold'){P.gold+=k.v;sfx('coin');text(P.x,P.y-20,'+'+k.v,'#f2c14e');k.dead=true}
+      else if(k.k==='mat'){P.mats[k.m]=(P.mats[k.m]||0)+k.v;sfx('coin');text(P.x,P.y-20,`+${k.v} ${MATS[k.m].n.toLowerCase()}`,MATS[k.m].c);k.dead=true}
       else if(k.k==='pot'){P.pots[k.kind]++;sfx('coin');text(P.x,P.y-20,k.kind==='hp'?'зелье здоровья':'зелье маны',k.kind==='hp'?'#ff8a7a':'#8fb4ff');k.dead=true}
       else if(k.k==='item'){if(P.bag.length<24){P.bag.push(k.it);k.dead=true;sfx('item');text(P.x,P.y-24,k.it.name,RAR[k.it.rar].c,k.it.rar>=3);if(k.it.rar>=3)toast(k.it.name,RAR[k.it.rar].c);save()}else if(!k.full){k.full=true;deny('сумка полна')}}}
     else k.full=false;
@@ -124,84 +127,69 @@ function updateMisc(dt){
   for(const t of trails)t.life-=dt;trails=trails.filter(t=>t.life>0);
   for(const w of warns){w.t-=dt;if(w.t<=0){w.done=true;if(w.fn&&!(w.src&&w.src.dead))w.fn()}}warns=warns.filter(w=>!w.done);
   for(const z of zones){z.t-=dt;z.tick-=dt;if(Math.random()<dt*30)parts.push({x:z.x+rr(z.r*.8),y:z.y+rr(z.r*.6)-30,vx:0,vy:200,life:.15,max:.15,col:'#e8e4da',size:1,g:0});
-    if(z.tick<=0){z.tick=.22;forNear(z.x,z.y,z.r,e=>dealDamage(e,P.S.wdmg*.45,'proj'))}}zones=zones.filter(z=>z.t>0);
+    if(z.tick<=0){z.tick=.22;G.skMul=z.mul||1;forNear(z.x,z.y,z.r,e=>dealDamage(e,P.S.wdmg*.45,'proj'));G.skMul=1}}zones=zones.filter(z=>z.t>0);
   G.smoke-=dt;if(G.smoke<=0){G.smoke=.35;HOUSES.forEach(h=>{if(Math.abs(h.x*16-P.x)<400)parts.push({x:h.x*16+50+rr(1),y:h.y*16-6,vx:4+rr(2),vy:-9,life:2.4,max:2.4,col:'rgba(225,225,235,.45)',size:2,g:0})})}
   G.amb-=dt;if(G.amb<=0){G.amb=.12;const r=RG(P.x/16|0,P.y/16|0);
     if(r===2||r===3)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:rr(6),vy:rr(6),life:3,max:3,col:r===2?'#e8f080':'#b0f060',size:1,g:0});
     if(r===7)for(let i=0;i<3;i++)parts.push({x:P.x+rr(VW/2),y:P.y-VH/2+rr(20),vx:-6+rr(4),vy:22+rr(6),life:5,max:5,col:'rgba(255,255,255,.85)',size:1,g:0});
     if(r===8)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:rr(4),vy:-14,life:2.5,max:2.5,col:Math.random()<.5?'#ff6a3a':'#ffb03a',size:1,g:0});
     if(r===5)parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:6+rr(3),vy:rr(1),life:4,max:4,col:'rgba(200,200,220,.18)',size:10,g:0})}}
-function spawnTick(dt){G.spawnT-=dt;if(G.spawnT>0)return;G.spawnT=2.2;
-  REGIONS.forEach((R,ri)=>{if(!R.cap)return;if(enemies.filter(e=>e.reg===ri).length<R.cap)spawnInRegion(ri,230)})}
+function spawnTick(dt){G.spawnT-=dt;if(G.spawnT>0)return;G.spawnT=2.2;if(G.inDun)return;if(P.boat||RG(P.x/16|0,P.y/16|0)===9)spawnSea();
+  REGIONS.forEach((R,ri)=>{if(!R.cap||R.sea)return;if(enemies.filter(e=>e.reg===ri).length<R.cap)spawnInRegion(ri,230)})}
 
 /* ----- world events ----- */
 const BOSS_INTRO={
-  fang:[{who:'Клык, вожак стаи',text:'Р-р-р... (Из чащи выходит огромный волк. Шерсть у него покрыта инеем.)'}],
-  grokk:[{who:'Гроккс',text:'Мелкий человек трогать камень Гроккса? Гроккс сделать из тебя лепёшку!'}],
-  queen:[{who:'Королева слизней',text:'Бульк. БУЛЬК. БУЛЬК!'},{who:'Королева слизней',text:'(Кажется, это была угроза.)'}],
-  yeti:[{who:'Хримнир',text:'Тёплый... Мягкий... Хримнир давно не ел тёплых.'}],
-  ashlord:[{who:'Пепельный владыка',text:'Моргрим обещал мне весь Вельмор. Я начну с тебя.'}]};
+  crabking:[{who:'Краб-король',text:'Щёлк. ЩЁЛК! (Огромный краб с короной из ракушек поднимается из песка.)'}],
+  ila:[{who:'Ила',text:'Ещё один мокрый гость... Топь любит гостей. Особенно тех, кто не уходит.'}],
+  barracuda:[{who:'Капитан Барракуда',text:'Жемчужина? Моя! Как и твоя лодка, твоё золото и твои сапоги. Ребята, на абордаж!'}],
+  yeti:[{who:'Хрум',text:'Тёплый... Мягкий... Хрум давно не ел тёплых.'}],
+  ashlord:[{who:'Саламандра',text:'Морвен обещала мне все острова. Я начну с твоего.'}],
+  sam:[{who:'Одноглазый Сэм',text:'Нашёл мою пещеру, да? Отсюда никто не уходит. Ну, кроме меня.'}],
+  trollking:[{who:'Король троллей',text:'ГР-Р-РАХ! (Похоже, он не любит гостей.)'}],
+  morven:[{who:'Морвен',text:'Пять жемчужин... Ты принёс их сам. Как мило.'},{who:'Морвен',text:'Я — шторм. Я — глубина. Тону и ты.'}]};
 function activateShrine(s){s.active=true;sfx('boss');G.shake=.3;const sx=s.x*16+8,sy=s.y*16+8;
-  const b=spawn(s.boss,sx,sy-46,{lvl:s.lvl,wave:s.id});b.home={x:sx,y:sy};b.ag=true;b.cd=2;G.boss=b;burst(b.x,b.y-14,s.col,40,90,1);
-  say(BOSS_INTRO[s.boss])}
+  const b=spawn(s.boss,sx,sy-46,{lvl:s.lvl+ngOff(),wave:s.id});b.home={x:sx,y:sy};b.ag=true;b.cd=2;G.boss=b;burst(b.x,b.y-14,s.col,40,90,1);say(BOSS_INTRO[s.boss])}
 function bossDown(e){G.boss=null;G.shake=.6;sfx('rune');burst(e.x,ecy(e),'#f2c14e',40,90,1.2);
   enemies.forEach(x=>{if(x.wave&&x.wave===e.wave&&!x.dead){x.dead=true;burst(x.x,x.y-5,'#9a8fa8',8,50,.4)}});
-  if(e.type==='lich'){G.won=true;proj=proj.filter(p=>p.owner==='p');G.winT=2;save();return}
+  if(String(e.wave).startsWith('dun')){dunBossDown(e);return}
   const s=SHRINES.find(s=>s.id===e.wave);if(s){s.active=false;s.done=true;grantRune(s)}}
 function grantRune(s){P.runes[s.id]=true;recalc();P.hp=P.S.maxHp;P.mp=P.S.maxMp;sfx('rune');burst(s.x*16+8,s.y*16,s.col,40,90,1.1);
-  const L={storm:'В ушах гремит гром. Ты стал быстрее: +10% к скорости атаки и +5% к бегу.',shadow:'Тени тянутся к тебе. +6% к шансу крита, и иногда ты просто исчезаешь из-под удара.',frost:'Холод бежит по пальцам. Теперь каждый твой удар может заморозить врага.',fire:'Огонь отзывается в крови. Весь твой урон вырос на 12%.',life:'Тёплый свет наполняет тело. Здоровье выросло на 15% и само понемногу восстанавливается.'};
+  const L={tide:'Жемчужина пахнет солёным ветром. Ты стал быстрее: +8% к скорости атаки и +4% к бегу.',mire:'Тёплый свет наполняет тело. Здоровье выросло на 12%.',gold:'Жемчужина блестит, как пиратское золото. +5% к шансу крита.',frost:'Холод бежит по пальцам. +5 к броне, иногда ты ускользаешь из-под удара, а удары могут заморозить врага.',fire:'Огонь отзывается в крови. Весь твой урон вырос на 10%.'};
   const cnt=Object.values(P.runes).filter(Boolean).length,NR=SHRINES.length;save();
-  say([{who:s.name,text:L[s.id]},{who:`Руны: ${cnt} из ${NR}`,text:cnt<NR?'Осталось святилищ: '+(NR-cnt)+'. Они мигают на карте.':'Все пять рун у тебя. Где-то на юго-востоке с грохотом рушится печать склепа.'}],()=>{if(cnt===NR)openGate()})}
-function openGate(silent){if(G.gateOpen&&!silent)return;G.gateOpen=true;set(GATE.x,GATE.y,T.FLOOR);drawTile(wx,GATE.x,GATE.y);drawTile(wx,GATE.x,GATE.y+1);buildMM();
-  if(silent)return;G.shake=.5;sfx('boss');toast('Печать склепа пала. Склеп на юго-востоке, за кладбищем.','#c48aff');
-  for(let i=0;i<9;i++){for(let k=0;k<20;k++){const tx=CRYPT.x0+2+rint(CRYPT.x1-CRYPT.x0-3),ty=CRYPT.y0+2+rint(8),x=tx*16+8,y=ty*16+8;if(!blocked(x,y,6,'e')){spawn(pick(['skel','sarcher','ghost','wraith']),x,y,{lvl:22,reg:6,elite:Math.random()<.25});break}}}
-  save()}
-function bossCheck(){if(!G.gateOpen||G.bossSpawned||G.won)return;const tx=P.x/16|0,ty=P.y/16|0;
-  if(inCrypt(tx,ty)&&ty>CRYPT.y0+4){G.bossSpawned=true;const b=spawn('lich',117*16+8,98*16+8,{lvl:24,wave:'lichboss'});b.cd=2.5;b.ag=true;G.boss=b;sfx('boss');burst(b.x,b.y-14,'#c48aff',40,90,1);
-    say([{who:'Моргрим',text:'Ещё один ученик Ольвена... Сколько вас было? Я сбился со счёта.'},{who:'Моргрим',text:'Твоя душа станет новым камнем в моей короне.'}])}}
+  say([{who:s.name,text:L[s.id]},{who:`Жемчужины: ${cnt} из ${NR}`,text:cnt<NR?'Осталось святилищ: '+(NR-cnt)+'. Они мигают на карте.':'Все пять жемчужин у тебя. Далеко на юге из моря поднимается Затонувший храм.'}],()=>{if(cnt===NR)openGate()})}
+function openGate(silent){G.gateOpen=true;if(silent)return;G.shake=.5;sfx('boss');toast('Затонувший храм открыт. Плыви на юг от Тихой гавани.','#7fe0d0');save()}
+function bossCheck(){}
 function die(){G.state='dead';sfx('die');setTimeout(()=>{$('ovDead').hidden=false;$('bRespawn').focus()},500)}
-function respawn(){if(G.state!=='dead')return;$('ovDead').hidden=true;const lost=Math.floor(P.gold*.2);P.gold-=lost;P.xp=Math.floor(P.xp*.85);
-  P.hp=P.S.maxHp;P.mp=P.S.maxMp;P.x=SPAWN.x;P.y=SPAWN.y;P.inv=1.5;P.kx=P.ky=0;P.poison=0;P.slowT=0;P.dash=0;
-  enemies=enemies.filter(e=>!e.wave);SHRINES.forEach(s=>s.active=false);proj=[];warns=[];zones=[];G.boss=null;
-  if(G.bossSpawned&&!G.won)G.bossSpawned=false;
+function respawn(){if(G.state!=='dead')return;$('ovDead').hidden=true;if(G.inDun)exitDungeon(true);const lost=Math.floor(P.gold*.2);P.gold-=lost;P.xp=Math.floor(P.xp*.85);
+  P.hp=P.S.maxHp;P.mp=P.S.maxMp;P.x=SPAWN.x;P.y=SPAWN.y;P.inv=1.5;P.kx=P.ky=0;P.poison=0;P.slowT=0;P.dash=0;P.boat=false;
+  enemies=enemies.filter(e=>!e.wave);SHRINES.forEach(s=>s.active=false);proj=[];warns=[];zones=[];G.boss=null;if(P.cmp)P.cmp.hp=P.cmp.maxHp;
   G.cx=P.x-VW/2;G.cy=P.y-VH/2;G.state='play';if(lost)toast('Пропало золота: '+lost);save()}
-function openChest(c){c.open=true;sfx('item');burst(c.x,c.y-6,'#f2c14e',20,60,.6);const crypt=inCrypt(c.tx,c.ty);
-  dropItem(genItem(c.lvl,{bias:crypt?2:1,minRar:1}),c.x,c.y+12);if(Math.random()<.5||crypt)dropItem(genItem(c.lvl,{bias:1}),c.x,c.y+12);
-  pickups.push({k:'gold',v:c.lvl*8+rint(20),x:c.x,y:c.y+14,t:0});if(Math.random()<.5)pickups.push({k:'pot',kind:pick(['hp','mp']),x:c.x+rr(8),y:c.y+14,t:0});save()}
-
-/* ----- NPCs & dialog ----- */
-const HINTS=['Слизни безобидны поодиночке. Королева слизней — совсем другое дело.','Волки прыгают, когда подходят близко. Отойди в сторону, как только волк присел.','Видишь красный круг на земле? Беги из него.','Пауки плюются паутиной. В ней ноги вязнут.','Ведьмы с болот исчезают и появляются за спиной.','Огры замахиваются медленно. Успеешь отбежать.','В деревне раны затягиваются сами. Монстры сюда не заходят.','Мои зелья лечат почти половину здоровья. Носи с собой несколько.'];
-function interact(n){
-  if(n.kind==='shrine'){const s=n.s;if(s.done)say([{who:s.name,text:'Камень молчит. Руна уже у тебя.'}]);else activateShrine(s);return}
-  if(n.kind==='chest'){openChest(n.c);return}
-  if(n.id==='elder'){
-    if(G.won)return say([{who:'Ольвен',text:'Ты спас Вельмор. Хотя какой ты теперь ученик... Самый настоящий герой!'},{who:'Ольвен',text:'Говорят, в старых сундуках ещё лежат легендарные вещи. Мир большой, гуляй.'}]);
-    if(G.quest===0)return say([
-      {who:'Ольвен',text:'А, вот и ты. Плохие вести: в старом склепе за кладбищем проснулся лич Моргрим.'},
-      {who:'Ольвен',text:'Ворота склепа держит печать из пяти рун: Инея, Пламени, Жизни, Бури и Тени.'},
-      {who:'Ольвен',text:'Каждую руну стережёт чудовище. Коснёшься камня святилища, и оно выйдет к тебе.'},
-      {who:'Ольвен',text:'Не спеши. Начни с Тёмного леса на западе, а сначала окрепни на лугах. Чем дальше от деревни, тем злее звери.'},
-      {who:'Ольвен',text:'Брам продаёт оружие, Ива варит зелья, а Тара платит за охоту на монстров. Загляни ко всем.'}],()=>{G.quest=1;toast('Задание: найди три руны');save()});
-    const left=SHRINES.filter(s=>!s.done);
-    if(left.length)return say([{who:'Ольвен',text:`Рун у тебя: ${SHRINES.length-left.length} из ${SHRINES.length}. Следующая — ${left[0].name}, ${left[0].where}. Чудовище там примерно ${left[0].lvl} уровня.`}]);
-    return say([{who:'Ольвен',text:'Печать пала. Склеп на юго-востоке, за кладбищем. Возьми побольше зелий.'}])}
-  if(n.id==='smith'){if(P.stockLvl!==P.lvl||!P.stock.length)restock();return say([{who:'Брам',text:pick(['Клинки, луки, доспехи. Всё честно выковано. Ну, почти всё.','Принёс трофеи? Покупаю всё, что блестит.','Сталь не врёт. Выбирай.'])}],()=>openInv('smith'))}
-  if(n.id==='herb'){P.hp=P.S.maxHp;P.mp=P.S.maxMp;P.poison=0;sfx('heal');burst(P.x,P.y-6,'#7fe07a',18,50,.7);
-    return say([{who:'Ива',text:'Выпей отвар, силы вернутся. '+pick(HINTS)}],()=>openInv('herb'))}
-  if(n.id==='tara'){const b=P.bounty,B=BOUNTIES[b.i];
-    if(!B)return say([{who:'Тара',text:'Охотиться больше не на кого. Ты вычистил всю округу. Спасибо, правда.'}]);
-    if(!b.active)return say([{who:'Тара',text:`Есть работа. «${B.t}». ${B.d} Плачу ${B.gold} золота и вещь из запасов стражи.`}],()=>{b.active=true;b.prog=0;toast('Новое задание: '+B.t);save()});
-    if(b.prog<B.n)return say([{who:'Тара',text:`«${B.t}»: ${b.prog} из ${B.n}. Возвращайся, когда закончишь.`}]);
-    return say([{who:'Тара',text:`Отличная охота. Держи ${B.gold} золота и вот это.`}],()=>{P.gold+=B.gold;dropItem(genItem(P.lvl,{bias:1.5,minRar:2}),P.x,P.y+14);b.i++;b.active=false;b.prog=0;sfx('lvl');save()})}
-}
+function openChest(c){c.open=true;sfx('item');burst(c.x,c.y-6,'#f2c14e',20,60,.6);const b=c.dun?2:1;
+  dropItem(genItem(c.lvl,{bias:b,minRar:1}),c.x,c.y+12);if(Math.random()<.5||c.dun)dropItem(genItem(c.lvl,{bias:1}),c.x,c.y+12);
+  pickups.push({k:'gold',v:c.lvl*8+rint(20),x:c.x,y:c.y+14,t:0});if(Math.random()<.5)pickups.push({k:'pot',kind:pick(['hp','mp']),x:c.x+rr(8),y:c.y+14,t:0});
+  const m=pick(Object.keys(MATS));pickups.push({k:'mat',m,v:2+rint(3),x:c.x+rr(8),y:c.y+14,t:0});
+  if(c.pearl&&!P.q.bp){P.q.bp=1;say([{who:'Сундук',text:'На дне сундука лежит чёрная жемчужина. От неё веет холодом, и кажется, что она шепчет.'},{who:'Подсказка',text:'Старая Илва с Мангровых топей или Отец Марин в деревне наверняка что-то о ней знают.'}])}save()}
 function restock(){P.stockLvl=P.lvl;P.stock=[];for(let i=0;i<3;i++)P.stock.push(genItem(P.lvl,{slot:'weapon',cls:P.cls,bias:.8}));['armor','amulet','ring'].forEach(s=>P.stock.push(genItem(P.lvl,{slot:s,bias:.8})))}
+/* ----- dialog with choices ----- */
 let D=null;
 function say(lines,onEnd){D={lines,i:0,onEnd,shown:0};G.state='dialog';$('dlg').hidden=false;document.body.classList.add('talking');showLine()}
-function showLine(){const l=D.lines[D.i];$('dWho').textContent=l.who;D.full=l.text;D.shown=0;$('dTxt').textContent=''}
-function advance(){if(!D)return;if(D.shown<D.full.length){D.shown=D.full.length;$('dTxt').textContent=D.full;return}
-  D.i++;if(D.i<D.lines.length)return showLine();const cb=D.onEnd;D=null;$('dlg').hidden=true;document.body.classList.remove('talking');G.state='play';P.cd.atk=.3;if(cb)cb()}
-function tickDialog(dt){if(!D)return;if(D.shown<D.full.length){D.shown=Math.min(D.full.length,D.shown+dt*60);$('dTxt').textContent=D.full.slice(0,D.shown|0)}if(actQ.has('use')||actQ.has('attack'))advance()}
+function showLine(){const l=D.lines[D.i];$('dWho').textContent=l.who;D.full=l.text;D.shown=0;$('dTxt').textContent='';$('dCh').innerHTML='';$('dCh').hidden=true;$('dMore').hidden=false}
+function showChoices(){const l=D.lines[D.i];if(!l.ch||!$('dCh').hidden)return;const box=$('dCh');box.innerHTML='';
+  l.ch.forEach((c,i)=>{const b=el('button','chbtn'+(c.no?' no':''),`<b>${i+1}</b> ${c.t}`);if(c.no)b.disabled=true;b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();choose(i)});box.appendChild(b)});box.hidden=false;$('dMore').hidden=true}
+function choose(i){if(!D)return;const l=D.lines[D.i];if(!l.ch||!l.ch[i]||l.ch[i].no)return;const c=l.ch[i];closeDlg();if(c.fn)c.fn()}
+function closeDlg(){D=null;$('dlg').hidden=true;document.body.classList.remove('talking');G.state='play';P.cd.atk=.3}
+function advance(){if(!D)return;if(D.shown<D.full.length){D.shown=D.full.length;$('dTxt').textContent=D.full;showChoices();return}
+  if(D.lines[D.i].ch)return;D.i++;if(D.i<D.lines.length)return showLine();const cb=D.onEnd;closeDlg();if(cb)cb()}
+function tickDialog(dt){if(!D)return;if(D.shown<D.full.length){D.shown=Math.min(D.full.length,D.shown+dt*60);$('dTxt').textContent=D.full.slice(0,D.shown|0);if(D.shown>=D.full.length)showChoices()}
+  if(D.lines[D.i].ch){for(let i=0;i<4;i++)if(actQ.has('skill'+i)&&$('dCh').hidden===false){choose(i);return}}
+  if(actQ.has('use')||actQ.has('attack'))advance()}
+$('dlg').addEventListener('pointerdown',e=>{e.preventDefault();advance()});
+const npcVisible=n=>!(n.cage&&P.q.pr===1);
 function findNear(){G.near=null;let best=24;
-  for(const n of NPCS){const d=Math.hypot(n.x-P.x,n.y-P.y);if(d<best){best=d;G.near={kind:'npc',...n,label:n.name}}}
-  for(const s of SHRINES){if(s.active)continue;const x=s.x*16+8,y=s.y*16+10,d=Math.hypot(x-P.x,y-P.y);if(d<best+4){best=d;G.near={kind:'shrine',s,x,y:y-8,label:s.done?'Святилище':'Разбудить стража'}}}
-  for(const c of CHESTS){if(c.open)continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<best){best=d;G.near={kind:'chest',c,x:c.x,y:c.y,label:'Сундук'}}}}
+  for(const n of NPCS){if(!npcVisible(n))continue;const d=Math.hypot(n.x-P.x,n.y-P.y);if(d<best){best=d;G.near={kind:'npc',...n,label:n.name}}}
+  if(!G.inDun)for(const s of SHRINES){if(s.active)continue;const x=s.x*16+8,y=s.y*16+10,d=Math.hypot(x-P.x,y-P.y);if(d<best+4){best=d;G.near={kind:'shrine',s,x,y:y-8,label:s.done?'Святилище':'Разбудить стража'}}}
+  for(const c of CHESTS){if(c.open)continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<best){best=d;G.near={kind:'chest',c,x:c.x,y:c.y,label:'Сундук'}}}
+  const tx=P.x/16|0,ty=P.y/16|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const t=at(tx+dx,ty+dy),x=(tx+dx)*16+8,y=(ty+dy)*16+8,d=Math.hypot(x-P.x,y-P.y);if(d>best)continue;
+    if(t===T.ENTRANCE&&!G.inDun){const en=ENTRANCES.find(e=>e.x===tx+dx&&e.y===ty+dy);if(en){best=d;G.near={kind:'entrance',en,x,y,label:DUNGEONS[en.id].n}}}
+    else if(t===T.STAIRS&&G.inDun){best=d;G.near={kind:'stairs',x,y,label:'Спуститься ниже'}}
+    else if(t===T.EXIT&&G.inDun){best=d;G.near={kind:'exit',x,y,label:'Выйти наружу'}}}}

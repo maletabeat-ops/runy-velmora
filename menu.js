@@ -22,7 +22,7 @@ document.querySelectorAll('[data-ico]').forEach(b=>{const i=el('img','mico');i.s
 const TRACKS={menu:'music/menu.mp3',village:'music/village.mp3',wild:'music/wild.mp3',dark:'music/dark.mp3',boss:'music/boss.mp3'};
 const MUS={cur:null,a:null,old:[],unlocked:false};
 function wantTrack(){if(G.state==='title')return'menu';if(!P)return'menu';if(G.boss&&!G.boss.dead)return'boss';const r=RG(P.x/16|0,P.y/16|0);
-  if(r===1)return'village';if(r===3||r===5||r===6||r===8)return'dark';return'wild'}
+  if(G.inDun)return'dark';if(r===1)return'village';if(r===3||r===5||r===8)return'dark';return'wild'}
 function musicTick(dt){if(!MUS.unlocked)return;const want=wantTrack(),vol=muted?0:SET.music;
   if(want!==MUS.cur){if(MUS.a)MUS.old.push(MUS.a);MUS.cur=want;try{const a=new Audio(TRACKS[want]);a.loop=true;a.volume=0;a.play().catch(()=>{});MUS.a=a}catch(_){MUS.a=null}}
   if(MUS.a)MUS.a.volume=Math.min(vol,MUS.a.volume+dt*.5*Math.max(.05,vol))*(vol>0?1:0);
@@ -81,14 +81,14 @@ $('ngStart').addEventListener('click',()=>{if(loadSave()&&!NG.armed){NG.armed=tr
 
 /* ----- start / pause ----- */
 function beginGame(cls,race,sv){unlockAudio();if(SET.autoFull)enterFull();
-  if(sv)applySave(sv);else newGame(cls,race);
+  if(sv)applySave(sv);else{G.ng=0;newGame(cls,race)}spawnComp();
   $('ovTitle').hidden=true;$('hud').hidden=false;buildHotbar();lastQ='';lastR='';G.state='play';G.cx=P.x-VW/2;G.cy=P.y-VH/2;G.regionCur=-1;
-  if(!sv){save();setTimeout(()=>toast('Поговори со старейшиной Ольвеном. Подойди и нажми E'),600)}else toast('С возвращением в Вельмор!')}
+  if(!sv){save();setTimeout(()=>toast('Поговори с капитаном Брандтом. Подойди и нажми E'),600)}else toast('С возвращением в Вельмор!')}
 function openMenu(){if(G.state!=='play')return;G.state='menu';capture=null;$('ovMenu').hidden=false;mountSettings('pSet');
-  const R=RACES[P.race]||RACES.human,t=Math.floor(G.time/60);$('pHero').textContent=`${R.n} · ${CLS[P.cls].n} · ур. ${P.lvl} · рун ${Object.values(P.runes).filter(Boolean).length} из ${SHRINES.length} · в пути ${t} мин`}
+  const R=RACES[P.race]||RACES.human,t=Math.floor(G.time/60);$('pHero').textContent=`${R.n} · ${CLS[P.cls].n} · ур. ${P.lvl} · жемчужин ${Object.values(P.runes).filter(Boolean).length} из ${SHRINES.length}${G.ng?` · НИ+${G.ng}`:''} · в пути ${t} мин`}
 $('pResume').addEventListener('click',()=>{capture=null;closeOv();if(SET.autoFull)enterFull()});
 $('pFull').addEventListener('click',()=>{toggleFull()});
-$('pMain').addEventListener('click',()=>{save();capture=null;showMain()});
+$('pMain').addEventListener('click',()=>{if(G.inDun)exitDungeon();save();capture=null;showMain()});
 $('pExit').addEventListener('click',exitGame);
 $('bMenu').addEventListener('click',()=>openMenu());
 $('bRestart').addEventListener('click',()=>showMain());
