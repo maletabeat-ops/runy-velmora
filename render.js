@@ -12,7 +12,7 @@ function drawImg(n,x,y,flip,white,alpha){const I=IMG[n];if(!I)return;const w=I.W
   if(alpha!=null&&alpha<1){ctx.globalAlpha=alpha;ctx.drawImage(s,Math.round((x-w/2)*AP)/AP,Math.round((y+2-h)*AP)/AP,w,h);ctx.globalAlpha=1}else ctx.drawImage(s,Math.round((x-w/2)*AP)/AP,Math.round((y+2-h)*AP)/AP,w,h)}
 const imgH=n=>IMG[n]?IMG[n].H/AP:24,imgW=n=>IMG[n]?IMG[n].W/AP:16;
 function shadow(x,y,rx=6){ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(x,y+2,rx,rx*.32,0,0,7);ctx.fill()}
-function heroImg(){const R=RACES[P.race]||RACES.hare;return R.night&&nightF()>.5?R.night:R.spr}
+function heroImg(){return heroSprFor(P.cls)}
 function drawPlayer(){const S=heroImg(),h=imgH(S);
   for(const t of trails)drawImg(S,t.x,t.y,t.fl,true,t.life*1.6);
   if(P.buff>0){ctx.globalAlpha=.35+.15*Math.sin(G.time*8);ctx.fillStyle='#e0402e';ctx.beginPath();ctx.ellipse(P.x,P.y+2,10,3.5,0,0,7);ctx.fill();ctx.globalAlpha=1}

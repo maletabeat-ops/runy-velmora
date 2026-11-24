@@ -16,10 +16,10 @@ const QST=[
  {t:'Возвращение',d:'Вернись к Ирэль в Светлый Ручей.'},
  {t:'Конец первого акта',d:'Ирэль научила тебя Лунному свету: тени на востоке топей больше не преграда. Второй акт скоро.'}];
 const NPCDEF={village:[
- {id:'irel',name:'Ирэль',spr:'hare',por:'p_irel',pt:'irel'},{id:'kornel',name:'Корнель Старый',spr:'kornel',por:'p_kornel',pt:'kornel'},
+ {id:'irel',name:'Ирэль',spr:'irel',por:'p_irel',pt:'irel'},{id:'kornel',name:'Корнель Старый',spr:'kornel',por:'p_kornel',pt:'kornel'},
  {id:'motta',name:'Мотта',spr:'motta',por:'p_motta',pt:'motta'},{id:'lucia',name:'Люция',spr:'glowbug',por:'p_glowbug',pt:'lucia'},{id:'born',name:'Борн',spr:'guard',por:'p_shard',pt:'born'}]};
 function zoneNpcs(id){return(NPCDEF[id]||[]).filter(n=>ZPOINTS[n.pt]).map(n=>({...n,x:ZPOINTS[n.pt].x,y:ZPOINTS[n.pt].y}))}
-const heroPor=()=>(RACES[P.race]||RACES.hare).por;
+const HERO='Рейн';const heroPor=()=>IMG.p_rein?'p_rein':'p_hare';const heroSprFor=c=>IMG['rein_'+c]?'rein_'+c:'hare';
 const me=t=>({who:'Ты',hero:1,text:t});
 const Q=()=>P.st||0;
 function qText(i){return(QST[i]||QST[QST.length-1]).d.replace('{n}',P.qn||0)}
@@ -28,7 +28,7 @@ function setStage(n,silent){P.st=n;P.qn=0;if(!silent){sfx('rune');toast('Зад�
 /* ----- dialog with portraits and choices ----- */
 let D=null;
 function say(lines,onEnd){D={lines,i:0,onEnd,shown:0};G.state='dialog';$('dlg').hidden=false;document.body.classList.add('talking');showLine()}
-function showLine(){const l=D.lines[D.i];const npc=!l.hero&&l.por;$('dWho').textContent=l.hero?(RACES[P.race].n):l.who;
+function showLine(){const l=D.lines[D.i];const npc=!l.hero&&l.por;$('dWho').textContent=l.hero?HERO:l.who;
   $('dPorL').hidden=!npc;$('dPorR').hidden=!l.hero;if(npc)$('dPorL').src=artURL(l.por,1);if(l.hero)$('dPorR').src=artURL(heroPor(),1);
   $('dlg').classList.toggle('herosay',!!l.hero);D.full=l.text;D.shown=0;$('dTxt').textContent='';$('dCh').innerHTML='';$('dCh').hidden=true;$('dMore').hidden=false}
 function showChoices(){const l=D.lines[D.i];if(!l.ch||!$('dCh').hidden)return;const box=$('dCh');box.innerHTML='';
@@ -59,7 +59,7 @@ function interact(n){
   if(id==='irel')return irelTalk(n);if(id==='kornel')return kornelTalk(n);if(id==='motta')return mottaTalk(n);if(id==='lucia')return luciaTalk(n);if(id==='born')return bornTalk(n)}
 const L=(n,t)=>({who:n.name,por:n.por,text:t});
 function irelTalk(n){const s=Q();
-  if(s===0)return say([L(n,'Проснулся? Хорошо. Ночью над лесом снова падали звёзды. Только это были не звёзды, а осколки луны.'),
+  if(s===0)return say([L(n,'Проснулся, Рейн? Хорошо. Ночью над лесом снова падали звёзды. Только это были не звёзды, а осколки луны.'),
     L(n,'Сто лет назад луна раскололась. С тех пор осколки падают на землю и меняют всё, чего касаются. Мы, Хранители, собираем их, пока их не забрал Орден Затмения.'),
     me('Орден Затмения? Я думал, это сказки.'),
     L(n,'Сказки не носят кинжалов. Магистр Нокс хочет собрать все осколки и погасить луну навсегда. Тогда наступит вечная ночь.'),
@@ -154,7 +154,7 @@ function renderTal(){const g=$('talGrid');g.innerHTML='';const pts=talPts();$('t
 
 /* ----- character panel ----- */
 function openChar(){if(G.state!=='play')return;G.state='menu';$('ovChar').hidden=false;renderChar()}
-function renderChar(){const R=RACES[P.race],C=CLS[P.cls],S=P.S;$('chPor').src=artURL(R.por,2);$('chName').textContent=`${R.n} · ${C.n}`;$('chLvl').textContent=`Уровень ${P.lvl} · опыт ${P.xp} / ${xpNeed(P.lvl)}`;
+function renderChar(){const R=RACES[P.race],C=CLS[P.cls],S=P.S;$('chPor').src=artURL(heroPor(),2);$('chName').textContent=`${HERO} · ${C.n}`;$('chLvl').textContent=`Уровень ${P.lvl} · опыт ${P.xp} / ${xpNeed(P.lvl)}`;
   $('chPerk').textContent='Особенность расы: '+R.perk;$('chPts').textContent=P.statPts>0?`Свободных очков: ${P.statPts}`:'Очки появятся на следующем уровне';
   const st=$('chStats');st.innerHTML='';STATS.forEach(k=>{const r=el('div','strow');const v=statVal(k);r.innerHTML=`<div><b>${STATN[k]}</b><small>${STATD[k]}</small></div><span class="sv">${v}</span>`;
     const b=el('button','tplus','+');b.disabled=P.statPts<=0;b.setAttribute('aria-label','Добавить: '+STATN[k]);b.addEventListener('click',()=>{if(P.statPts<=0)return;P.statPts--;P.alloc[k]=(P.alloc[k]||0)+1;recalc();sfx('coin');renderChar();save()});r.appendChild(b);st.appendChild(r)});

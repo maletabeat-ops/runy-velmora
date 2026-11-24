@@ -13,8 +13,12 @@
 
 ## Графика и музыка
 
-Персонажей, врагов и окружение нарисовал автор игры в Nano Banana. Музыка распространяется под лицензией CC0 и взята с OpenGameArt.org:
+Персонажей, врагов и предметы окружения нарисовал автор игры в Nano Banana.
 
-- «Medieval: The Bard's Tale» и «Medieval: The Old Tower Inn» — RandomMind
-- «The Field of Dreams» — pauliuw
-- «Dark Forest Theme» и «Battle Theme A» — cynicmusic
+Плитки земли и воды взяты из **LPC Tile Atlas** (OpenGameArt.org, лицензии CC-BY-SA 3.0 и GPL 3.0). Это работа участников Liberated Pixel Cup, полный список авторов лежит в файле [tiles/LPC_ATTRIBUTION.txt](tiles/LPC_ATTRIBUTION.txt).
+
+Музыка с OpenGameArt.org:
+
+- «Mystical Theme» — Alexandr Zhelanov (CC-BY 3.0), главное меню
+- «Pleasant Creek», «Woodland Fantasy», «Soliloquy» — Matthew Pablo (CC-BY 3.0), деревня, лес и топи
+- «The Last Encounter» — Matthew Pablo (CC-BY-SA 3.0), бои с боссами

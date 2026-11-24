@@ -55,8 +55,8 @@ function mountSettings(where){$(where).appendChild($('setBlock'));syncSet();rend
 /* ----- main menu ----- */
 function showScreen(id){['mmMain','mmNew','mmSet'].forEach(s=>$(s).hidden=s!==id)}
 function showMain(){G.state='title';$('hud').hidden=true;$('ovTitle').hidden=false;['ovMenu','ovWin','ovDead','ovInv','ovMap'].forEach(i=>$(i).hidden=true);$('dlg').hidden=true;
-  const sv=loadSave();$('mContinue').hidden=!sv;if(sv&&CLS[sv.cls]&&RACES[sv.race])$('mContInfo').textContent=`${RACES[sv.race].n}, ${CLS[sv.cls].n}, ур. ${sv.lvl}`;else $('mContinue').hidden=true;
-  $('mLogo').src=artURL(sv&&RACES[sv.race]?RACES[sv.race].spr:'hare',3);showScreen('mmMain')}
+  const sv=loadSave();$('mContinue').hidden=!sv;if(sv&&CLS[sv.cls])$('mContInfo').textContent=`Рейн, ${CLS[sv.cls].n}, ур. ${sv.lvl}`;else $('mContinue').hidden=true;
+  $('mLogo').src=artURL(heroSprFor(sv&&CLS[sv.cls]?sv.cls:'ranger'),3);showScreen('mmMain')}
 $('mContinue').addEventListener('click',()=>{const sv=loadSave();if(sv)beginGame(sv.cls,sv.race,sv)});
 $('mNew').addEventListener('click',()=>{NG.armed=false;renderNew();showScreen('mmNew')});
 $('mSettings').addEventListener('click',()=>{mountSettings('mmSetBody');showScreen('mmSet')});
@@ -69,10 +69,10 @@ function previewStats(cls,race){const c=CLS[cls],R=RACES[race],s=R.st;
   return[['Здоровье',Math.round(c.hp+s.vit*5+s.str)],['Мана',Math.round(c.mp+s.int*2+s.spi*2)],['Урон оружия',Math.round(c.w.dmg*(1+(c.scale==='dex'?s.dex:c.scale==='str'?s.str:s.int)*.02))],['Сила магии',Math.round(c.sp*(1+s.int*.03)*100)+'%'],
     ['Броня',Math.round(c.armor+s.vit*.3+(R.b.armor||0))],['Шанс крита',(5+s.dex*.5).toFixed(1)+'%'],['Уворот',(s.dex*.3).toFixed(1)+'%'],['Скорость',Math.round(c.ms*(1+(R.b.ms||0)/100))]]}
 function renderNew(){const c=CLS[NG.cls],r=RACES[NG.race];
-  $('pvImg').src=artURL(r.spr,3);$('pvName').textContent=`${r.n} · ${c.n}`;
+  $('pvImg').src=artURL(heroSprFor(NG.cls),3);$('pvName').textContent=`Рейн · ${c.n}`;
   const st=$('pvStats');st.innerHTML='';previewStats(NG.cls,NG.race).forEach(([a,b])=>st.append(el('dt','',a),el('dd','',String(b))));
   const sts=$('pvAttr');sts.innerHTML='';STATS.forEach(k=>{const d=el('div','pip',`<span>${STATN[k]}</span><b>${r.st[k]}</b>`);sts.appendChild(d)});
-  const cc=$('clsChips');cc.innerHTML='';Object.keys(CLS).forEach(k=>{const b=el('button','chip'+(k===NG.cls?' on':''));const i=el('img');i.src=ICON[CLS[k].w.icon]||ICON.sword;i.alt='';b.append(i,CLS[k].n);b.addEventListener('click',()=>{NG.cls=k;renderNew()});cc.appendChild(b)});
+  const cc=$('clsChips');cc.innerHTML='';Object.keys(CLS).forEach(k=>{const b=el('button','chip'+(k===NG.cls?' on':''));const i=el('img');i.src=IMG['rein_'+k]?artURL('rein_'+k,1):(ICON[CLS[k].w.icon]||ICON.sword);i.alt='';b.append(i,CLS[k].n);b.addEventListener('click',()=>{NG.cls=k;renderNew()});cc.appendChild(b)});
   $('clsDesc').textContent=c.d;$('clsSk').innerHTML=c.sk.map(s=>`<li><span style="color:${s.col}">${s.ic}</span> ${s.n} <small>ур. ${s.lv} · ${s.d}</small></li>`).join('');
   const rc=$('raceChips');rc.innerHTML='';Object.keys(RACES).forEach(k=>{const b=el('button','chip'+(k===NG.race?' on':''));const i=el('img');i.src=artURL(RACES[k].por,1);i.alt='';b.append(i,RACES[k].n);b.addEventListener('click',()=>{NG.race=k;renderNew()});rc.appendChild(b)});
   $('raceDesc').textContent=r.d+' Особенность: '+r.perk;
@@ -85,7 +85,7 @@ function beginGame(cls,race,sv){unlockAudio();if(SET.autoFull)enterFull();
   $('ovTitle').hidden=true;$('hud').hidden=false;buildHotbar();lastQ='';lastR='';G.state='play';G.cx=P.x-VW/2;G.cy=P.y-VH/2;G.regionCur=-1;
   if(!sv){save();setTimeout(()=>toast('Поговори с Ирэль у дома на дереве. Подойди и нажми E'),600)}else toast('С возвращением, Хранитель!')}
 function openMenu(){if(G.state!=='play')return;G.state='menu';capture=null;$('ovMenu').hidden=false;mountSettings('pSet');
-  const R=RACES[P.race],t=Math.floor(G.time/60);$('pHero').textContent=`${R.n} · ${CLS[P.cls].n} · ур. ${P.lvl} · ${QST[P.st||0].t} · в пути ${t} мин`}
+  const t=Math.floor(G.time/60);$('pHero').textContent=`Рейн · ${CLS[P.cls].n} · ур. ${P.lvl} · ${QST[P.st||0].t} · в пути ${t} мин`}
 $('pResume').addEventListener('click',()=>{capture=null;closeOv();if(SET.autoFull)enterFull()});
 $('pFull').addEventListener('click',()=>{toggleFull()});
 $('pMain').addEventListener('click',()=>{save();capture=null;loadZone('village','spawn');showMain()});

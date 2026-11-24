@@ -22,13 +22,16 @@ function cnv(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;
 function px(c,col,x,y,w=1,h=1){c.fillStyle=col;c.fillRect(x,y,w,h)}
 
 /* ----- art (images made by the player in Nano Banana) ----- */
-const ART_NAMES='hare,moth,guard,wolf,p_irel,campfire,cultist,mistborn,p_glowbug,mushrooms,b_mistwitch,b_devourer,p_moth,p_motta,birch,b_nox,boar,pillar,bush,p_nox,deadtree,nox,glowbug,p_hare,oak,shard,mossrock,motta,rock,p_shard,spider,spruce,well,chest_open,treehouse,cottage,p_halfmoon,halfmoon_n,fence,signpost,p_kornel,kornel,p_rootfolk,rootfolk,sporeling,b_executioner,stump,halfmoon_d,lantern,chest'.split(',');
+const ART_NAMES='irel,hare,moth,guard,wolf,p_irel,campfire,cultist,mistborn,p_glowbug,mushrooms,b_mistwitch,b_devourer,p_moth,p_motta,birch,b_nox,boar,pillar,bush,p_nox,deadtree,nox,glowbug,p_hare,oak,shard,mossrock,motta,rock,p_shard,spider,spruce,well,chest_open,treehouse,cottage,p_halfmoon,halfmoon_n,fence,signpost,p_kornel,kornel,p_rootfolk,rootfolk,sporeling,b_executioner,stump,halfmoon_d,lantern,chest'.split(',');
 const IMG={};
 function prepImg(name,img){const w=img.width,h=img.height,c=cnv(w,h);c.getContext('2d').drawImage(img,0,0);
   const f=cnv(w,h),fx=f.getContext('2d');fx.translate(w,0);fx.scale(-1,1);fx.drawImage(c,0,0);
   const wh=s=>{const o=cnv(w,h),ox=o.getContext('2d');ox.drawImage(s,0,0);ox.globalCompositeOperation='source-in';ox.fillStyle='#fff';ox.fillRect(0,0,w,h);return o};
   IMG[name]={c,f,w:wh(c),fw:wh(f),W:w,H:h,url:null}}
-function loadArt(){return Promise.all(ART_NAMES.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>{console.error('art missing',n);res()};i.src='art/'+n+'.png'})))}
+const ATLAS={};
+function loadAtlas(){return Promise.all([['base','tiles/lpc_base.png'],['build','tiles/lpc_build.png']].map(([k,u])=>new Promise(res=>{const i=new Image();i.onload=()=>{ATLAS[k]=i;res()};i.onerror=()=>res();i.src=u})))}
+const OPT_ART=['rein_guardian','rein_blade','rein_ranger','rein_mage','rein_druid','rein_light','p_rein'];
+function loadArt(){return Promise.all([loadAtlas(),...OPT_ART.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>res();i.src='art/'+n+'.png'})),...ART_NAMES.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>{console.error('art missing',n);res()};i.src='art/'+n+'.png'}))])}
 function artURL(n,scale=1){const I=IMG[n];if(!I)return'';const k='u'+scale;if(I[k])return I[k];const c=cnv(I.W*scale,I.H*scale),x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(I.c,0,0,c.width,c.height);return I[k]=c.toDataURL()}
 
 /* ----- small code-drawn sprites: item icons ----- */
@@ -55,7 +58,10 @@ const BIOME={village:{g:['#4a7d3e','#3d6c34','#5e9449','#6fa654'],p:['#8e6c44','
   marsh:{g:['#45563a','#384830','#556846','#62744e'],p:['#5c5136','#4a4129','#6e6244']},ruin:{g:['#4a4a52','#3c3c44','#5a5a64','#6a6a74'],p:['#6e6a64','#5a5650','#86827a']}};
 let BIO=BIOME.village;
 let worldCv=cnv(1,1),wx=worldCv.getContext('2d');
-function drawTile(c,tx,ty){const t=at(tx,ty),X=tx*32,Y=ty*32,h=s=>hash(tx,ty,s),g=BIO.g,p=BIO.p;
+function drawTile(c,tx,ty,over){const t=at(tx,ty),X=tx*32,Y=ty*32,h=s=>hash(tx,ty,s),g=BIO.g,p=BIO.p;
+  if(over){if(t===T.FLOWERS){const cols=['#e8e0f8','#f2d48a','#c8a8ff','#8fd8ff'];for(let i=0;i<5;i++){const x=X+3+((h(i+60)*25)|0),y=Y+3+((h(i+70)*25)|0);px(c,'#2e5a2a',x+1,y+2,1,2);px(c,cols[(h(i+90)*4)|0],x,y,3,2);px(c,'#fff8d0',x+1,y,1,1)}}
+    else if(t===T.DARK){for(let i=0;i<8;i++)px(c,'rgba(20,50,25,.35)',X+((h(i+200)*28)|0),Y+((h(i+210)*28)|0),4,3)}
+    else if(t===T.BRIDGE){px(c,'#8a6038',X+2,Y,28,32);for(let i=0;i<4;i++){px(c,'#5e3e22',X+2,Y+i*8+6,28,2);px(c,'#a87848',X+2,Y+i*8,28,1)}px(c,'#4a2e18',X,Y,3,32);px(c,'#4a2e18',X+29,Y,3,32)}return}
   const grass=(dark)=>{px(c,dark?g[1]:g[0],X,Y,32,32);for(let i=0;i<22;i++){const x=X+((h(i)*31)|0),y=Y+((h(i+40)*29)|0);px(c,i%3?g[1]:g[2],x,y,1,2+((h(i+80)*2)|0))}
     for(let i=0;i<4;i++)if(h(i+120)<.5){const x=X+((h(i+130)*29)|0),y=Y+((h(i+140)*28)|0);px(c,g[3],x,y,1,1);px(c,g[2],x,y+1,1,2)}};
   const edge=(fn,isSame)=>{for(const[dx,dy]of[[0,-1],[0,1],[-1,0],[1,0]]){if(isSame(at(tx+dx,ty+dy)))continue;for(let i=0;i<32;i+=1){const d=2+((hash(tx*32+i,ty*32+dx*7+dy*3,9)*4)|0);
@@ -74,7 +80,28 @@ function drawTile(c,tx,ty){const t=at(tx,ty),X=tx*32,Y=ty*32,h=s=>hash(tx,ty,s),
   case T.WALL:px(c,'#4a4a52',X,Y,32,32);for(let r=0;r<4;r++){px(c,'#3a3a42',X,Y+r*8+7,32,1);const o=(r%2)*8;for(let k=0;k<2;k++)px(c,'#3a3a42',X+o+k*16+6,Y+r*8,1,7)}break;
   case T.FLOOR:px(c,'#5a5650',X,Y,32,32);px(c,'#4a4640',X,Y,32,1);px(c,'#4a4640',X,Y,1,32);break;
   }}
-function renderWorld(){worldCv=cnv(W*32,H*32);wx=worldCv.getContext('2d');for(let y=0;y<H;y++)for(let x=0;x<W;x++)drawTile(wx,x,y)}
+/* LPC terrain blocks: 3x6 cells; quarters are picked from neighbours (edges, outer and inner corners) */
+const TB={grass:{c:21,r:0},dirt:{c:18,r:0},sand:{c:15,r:0},water:{c:9,r:9},swamp:{c:9,r:9}};
+const TSAME={dirt:v=>v===T.PATH||v===T.EXIT||v===T.BRIDGE,sand:v=>v===T.SAND,water:v=>v===T.WATER||v===T.SHALLOW||v===T.BRIDGE,swamp:v=>v===T.MUD};
+function terrQ(c,name,tx,ty){const A=ATLAS.base,b=TB[name],same=TSAME[name];if(!A)return false;
+  for(const qy of[0,1])for(const qx of[0,1]){const dx=qx?1:-1,dy=qy?1:-1,h=same(at(tx+dx,ty)),v=same(at(tx,ty+dy)),d=same(at(tx+dx,ty+dy));let col,row;
+    if(h&&v&&d){col=(hash(tx,ty,77)*3)|0;row=5}
+    else if(h&&v){col=qx?1:2;row=qy?0:1}
+    else if(h){col=1;row=qy?4:2}
+    else if(v){col=qx?2:0;row=3}
+    else{col=qx?2:0;row=qy?4:2}
+    c.drawImage(A,(b.c+col)*32+qx*16,(b.r+row)*32+qy*16,16,16,tx*32+qx*16,ty*32+qy*16,16,16)}return true}
+function baseGrass(c,tx,ty){const A=ATLAS.base;if(!A)return false;const b=TB.grass,v=(hash(tx,ty,31)*3)|0;c.drawImage(A,(b.c+v)*32,(b.r+5)*32,32,32,tx*32,ty*32,32,32);return true}
+const BTINT={village:null,forest:'rgba(20,50,40,.32)',marsh:'rgba(60,70,30,.38)',ruin:'rgba(40,40,60,.3)'};
+function renderWorld(){worldCv=cnv(W*32,H*32);wx=worldCv.getContext('2d');const useA=!!ATLAS.base;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const t=at(x,y);
+    if(useA&&t!==T.WALL&&t!==T.FLOOR){baseGrass(wx,x,y);
+      if(t===T.FLOWERS||t===T.DARK)drawTile(wx,x,y,true)}
+    else drawTile(wx,x,y)}
+  if(useA){for(let y=0;y<H;y++)for(let x=0;x<W;x++){const t=at(x,y);
+      if(TSAME.water(t)){terrQ(wx,'water',x,y);if(t===T.BRIDGE)drawTile(wx,x,y,true);}
+      else if(t===T.PATH||t===T.EXIT)terrQ(wx,'dirt',x,y);else if(t===T.SAND)terrQ(wx,'sand',x,y);else if(t===T.MUD){terrQ(wx,'swamp',x,y);wx.globalCompositeOperation='source-atop';wx.fillStyle='rgba(70,80,40,.6)';wx.fillRect(x*32,y*32,32,32);wx.globalCompositeOperation='source-over'}}
+    const tint=BTINT[ZONE?ZONE.biome:'village'];if(tint){wx.globalCompositeOperation='multiply';wx.fillStyle=tint.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,'rgb($1,$2,$3)');wx.globalAlpha=+tint.match(/,([\d.]+)\)$/)[1];wx.fillRect(0,0,worldCv.width,worldCv.height);wx.globalAlpha=1;wx.globalCompositeOperation='source-over'}}}
 
 /* ----- minimap + fog ----- */
 let mmBase=cnv(W,H),mmb=mmBase.getContext('2d'),fogCv=cnv(W,H),fogx=fogCv.getContext('2d'),explored=new Uint8Array(W*H);
