@@ -17,10 +17,37 @@ const QST=[
  {t:'Конец первого акта',d:'Ирэль научила тебя Лунному свету: тени на востоке топей больше не преграда. Второй акт скоро.'}];
 const NPCDEF={village:[
  {id:'irel',name:'Ирэль',spr:'irel',por:'p_irel',pt:'irel'},{id:'kornel',name:'Корнель Старый',spr:'kornel',por:'p_kornel',pt:'kornel'},
- {id:'motta',name:'Мотта',spr:'motta',por:'p_motta',pt:'motta'},{id:'lucia',name:'Люция',spr:'glowbug',por:'p_glowbug',pt:'lucia'},{id:'born',name:'Борн',spr:'guard',por:'p_shard',pt:'born'}]};
+ {id:'motta',name:'Мотта',spr:'motta',por:'p_motta',pt:'motta'},{id:'lucia',name:'Люция',spr:'glowbug',por:'p_glowbug',pt:'lucia'},{id:'born',name:'Борн, страж',spr:'v_badger',por:'v_badger',pt:'born'},
+ {id:'mouse',name:'Нита, торговка',spr:'v_mouse',por:'v_mouse',pt:'mouse'},{id:'cat',name:'Мурра, хозяйка таверны',spr:'v_cat',por:'v_cat',pt:'cat'},
+ {id:'baker',name:'Пышка, пекарь',spr:'v_hedgehog',por:'v_hedgehog',pt:'baker'},{id:'owl',name:'Ухта, хранитель книг',spr:'v_owl',por:'v_owl',pt:'owl'},
+ {id:'turtle',name:'Старейшина Мох',spr:'v_turtle',por:'v_turtle',pt:'turtle'},{id:'mole',name:'Бур, рудокоп',spr:'v_mole',por:'v_mole',pt:'mole'},
+ {id:'frog',name:'Квак, рыбак',spr:'v_frog',por:'v_frog',pt:'frog'},{id:'squirrel',name:'Шишка, плотник',spr:'v_squirrel',por:'v_squirrel',pt:'squirrel',wander:3},
+ {id:'kids',name:'Зайчата Пип и Тим',spr:'v_kids',por:'v_kids',pt:'kids',wander:5},{id:'raven',name:'Карр, путник',spr:'v_raven',por:'v_raven',pt:'raven'}]};
+const CHAT={
+ owl:['Ху-ху. Говорят, луна раскололась на девять осколков. Я нашёл упоминание лишь о семи.','Орден Затмения когда-то был орденом Рассвета. Книги помнят то, что забыли люди.','Тише, тише. В библиотеке храма даже пыль ложится шёпотом.'],
+ turtle:['Я помню ночь, когда луна была целой. Тогда река текла вспять, и никто не удивлялся.','Не торопись, Рейн. Кто бежит, тот спотыкается. Кто идёт, тот доходит.','Мои кости чуют туман за три дня. Скоро он снова поползёт с топей.'],
+ mole:['Под деревней старые шахты. Там что-то стучит по ночам. И это не я.','Лестницу видишь? Вниз пока нельзя. Обвал. Разгребу к весне.','Железо тут хорошее. Корнель берёт всё, что я выкопаю.'],
+ frog:['Ква. Рыба сегодня клюёт только на светлячков. Странная рыба.','Видел в ручье лунный отблеск днём. Не к добру, ква.','Лодку не трогай. Она дырявая, но гордая.'],
+ squirrel:['Чиню всё, что скрипит. Кроме Корнеля, он скрипит с рождения.','Новая крыша таверне, новый забор Мотте... Работы полно!','Орехи? Нет, это гвозди. Хотя похоже, да.'],
+ kids:['Пип: Рейн, а ты правда упал с луны?! Тим: Дурак, он с неё спрыгнул!','Тим: Мы играем в Хранителя! Пип: Чур, я не культист!','Пип: Мама говорит, в лесу волки. Тим: А мы их не боимся! ...Почти.'],
+ raven:['Карр. Я хожу от деревни к деревне. Везде говорят о Расколотой Луне.','На юге города закрывают ворота на ночь. Культистов там больше, чем ворон. А ворон там много, поверь.','Хочешь совет, бесплатно? Не верь тому, кто носит чёрное и улыбается. Кроме меня.'],
+ cat:['Мур. Садись, отдохни. Сидр с утра, похлёбка к вечеру.','В таверне слышно всё. Например, что Борн боится пауков. Но я тебе этого не говорила.']};
+function chatTalk(n){const id=n.id;
+  if(id==='mouse')return say([L(n,pick(['Яблочки, травки, зелья! Всё для героя, недорого.','Ой, Рейн! Для тебя скидка. Ну... почти.']))],()=>{SHOPN='Лавка Ниты';openInv('herb')});
+  if(id==='baker'){const day=Math.floor(G.time/240);if(P.bun!==day){P.bun=day;P.hp=P.S.maxHp;sfx('heal');burst(P.x,P.y-6,'#f2d48a',14,40,.6);
+      return say([L(n,'Держи булочку, ещё тёплая! За счёт пекарни. Героям положено.')],()=>toast('Здоровье восполнено','#f2d48a'))}
+    return say([L(n,pick(['Новые булочки будут к следующему утру. Терпение!','Тесто любит тишину. А я люблю тесто.']))])}
+  if(id==='cat'){P.hp=P.S.maxHp;P.mp=P.S.maxMp;sfx('heal');return say([L(n,pick(CHAT.cat)+' '+pick(HINTS))])}
+  say([L(n,pick(CHAT[id]||['...']))])}
+let SHOPN=null;
+function npcTick(dt){for(const n of NPCS){if(!n.wander)continue;n.hx=n.hx||n.x;n.hy=n.hy||n.y;n.wt=(n.wt||0)-dt;
+  if(G.state==='dialog'||Math.hypot(P.x-n.x,P.y-n.y)<28){n.mv=0;continue}
+  if(n.wt<=0){n.wt=1.5+Math.random()*3;if(Math.random()<.6){const a=Math.random()*6.283,r=Math.random()*n.wander*16;n.tx=n.hx+Math.cos(a)*r;n.ty=n.hy+Math.sin(a)*r}else n.tx=null}
+  if(n.tx!=null){const dx=n.tx-n.x,dy=n.ty-n.y,d=Math.hypot(dx,dy);if(d<2){n.tx=null;n.mv=0;continue}const sp=18*dt,nx=n.x+dx/d*sp,ny=n.y+dy/d*sp;
+    if(blocked(nx,ny,5,'e')){n.tx=null;n.mv=0;continue}n.x=nx;n.y=ny;n.mv=1;n.fl=dx<0}}}
 function zoneNpcs(id){return(NPCDEF[id]||[]).filter(n=>ZPOINTS[n.pt]).map(n=>({...n,x:ZPOINTS[n.pt].x,y:ZPOINTS[n.pt].y}))}
-const HERO='Рейн';const heroPor=()=>IMG.p_rein?'p_rein':'p_hare';const heroSprFor=c=>IMG['rein_'+c]?'rein_'+c:'hare';
-const me=t=>({who:'Ты',hero:1,text:t});
+const HERO='Рейн';const heroPor=e=>e&&IMG['p_rein_'+e]?'p_rein_'+e:IMG.p_rein?'p_rein':'p_hare';const heroSprFor=c=>IMG['rein_'+c]?'rein_'+c:'hare';
+const me=(t,emo)=>({who:'Ты',hero:1,text:t,emo});
 const Q=()=>P.st||0;
 function qText(i){return(QST[i]||QST[QST.length-1]).d.replace('{n}',P.qn||0)}
 function setStage(n,silent){P.st=n;P.qn=0;if(!silent){sfx('rune');toast('Задание: '+QST[n].t,'#f2d48a')}save()}
@@ -29,7 +56,7 @@ function setStage(n,silent){P.st=n;P.qn=0;if(!silent){sfx('rune');toast('Зад�
 let D=null;
 function say(lines,onEnd){D={lines,i:0,onEnd,shown:0};G.state='dialog';$('dlg').hidden=false;document.body.classList.add('talking');showLine()}
 function showLine(){const l=D.lines[D.i];const npc=!l.hero&&l.por;$('dWho').textContent=l.hero?HERO:l.who;
-  $('dPorL').hidden=!npc;$('dPorR').hidden=!l.hero;if(npc)$('dPorL').src=artURL(l.por,1);if(l.hero)$('dPorR').src=artURL(heroPor(),1);
+  $('dPorL').hidden=!npc;$('dPorR').hidden=!l.hero;if(npc)$('dPorL').src=artURL(l.por,1);if(l.hero)$('dPorR').src=artURL(heroPor(l.emo),1);
   $('dlg').classList.toggle('herosay',!!l.hero);D.full=l.text;D.shown=0;$('dTxt').textContent='';$('dCh').innerHTML='';$('dCh').hidden=true;$('dMore').hidden=false}
 function showChoices(){const l=D.lines[D.i];if(!l.ch||!$('dCh').hidden)return;const box=$('dCh');box.innerHTML='';
   l.ch.forEach((c,i)=>{const b=el('button','chbtn'+(c.no?' no':''),`<b>${i+1}</b> ${c.t}`);if(c.no)b.disabled=true;b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();choose(i)});box.appendChild(b)});box.hidden=false;$('dMore').hidden=true}
@@ -56,12 +83,12 @@ function interact(n){
     P.flags.shard=1;PROPS=PROPS.filter(p=>p!==n.p);sfx('moon');burst(n.p.x,n.p.y-8,'#cfd8ff',40,80,1);
     say([{who:'Осколок луны',text:'Осколок тёплый и тихо поёт. Как только ты касаешься его, в голове звучит далёкий голос: «Хранитель... Найди остальных...»'},me('Надо показать его Корнелю. Он знает, что делать с осколками.')],()=>setStage(2));return}
   const id=n.id;
-  if(id==='irel')return irelTalk(n);if(id==='kornel')return kornelTalk(n);if(id==='motta')return mottaTalk(n);if(id==='lucia')return luciaTalk(n);if(id==='born')return bornTalk(n)}
+  if(id==='irel')return irelTalk(n);if(id==='kornel')return kornelTalk(n);if(id==='motta')return mottaTalk(n);if(id==='lucia')return luciaTalk(n);if(id==='born')return bornTalk(n);return chatTalk(n)}
 const L=(n,t)=>({who:n.name,por:n.por,text:t});
 function irelTalk(n){const s=Q();
   if(s===0)return say([L(n,'Проснулся, Рейн? Хорошо. Ночью над лесом снова падали звёзды. Только это были не звёзды, а осколки луны.'),
     L(n,'Сто лет назад луна раскололась. С тех пор осколки падают на землю и меняют всё, чего касаются. Мы, Хранители, собираем их, пока их не забрал Орден Затмения.'),
-    me('Орден Затмения? Я думал, это сказки.'),
+    me('Орден Затмения? Я думал, это сказки.','surprised'),
     L(n,'Сказки не носят кинжалов. Магистр Нокс хочет собрать все осколки и погасить луну навсегда. Тогда наступит вечная ночь.'),
     L(n,'Я стара и последняя из Хранителей. Теперь твой черёд. Осколок упал в Шепчущем лесу, к северу отсюда. Найди его раньше Ордена.')],()=>setStage(1));
   if(s===1)return say([L(n,'Осколок упал где-то в центре Шепчущего леса. Лес к северу, за дорогой. Будь осторожен: волки там стали злее.')]);
@@ -102,7 +129,7 @@ function storyTick(dt){const s=Q();
     say([{who:'Культист',por:null,text:'Хранитель?! Осколок принадлежит Ордену! Взять его!'}])}
   if(s===7&&ZID==='marsh'&&!G.witch&&!P.flags.witch&&Math.hypot(P.x-ZPOINTS.arena.x,P.y-ZPOINTS.arena.y)<130){G.witch=1;
     const b=spawn('b_mistwitch',ZPOINTS.arena.x,ZPOINTS.arena.y-20,{lvl:8+ngOff(),wave:'witch'});b.home={x:ZPOINTS.arena.x,y:ZPOINTS.arena.y};b.ag=true;b.cd=2.5;G.boss=b;sfx('boss');
-    say([{who:'Ведьма Тумана',por:null,text:'Маленький Хранитель с фонариком... Нокс обещал мне твою луну. А туман всегда берёт своё.'},me('Твой туман больше никого не заберёт.')])}}
+    say([{who:'Ведьма Тумана',por:null,text:'Маленький Хранитель с фонариком... Нокс обещал мне твою луну. А туман всегда берёт своё.'},me('Твой туман больше никого не заберёт.','angry')])}}
 function storyKill(e){if(Q()===6&&e.type==='cultist'){P.qn=(P.qn||0)+1;if(P.qn>=6){setStage(7);say([me('У культиста письмо: «Ведьма ждёт у старых колонн на севере. Хранитель не должен пройти». Значит, мне туда.')])}}}
 function bossDown(e){G.boss=null;G.shake=.6;sfx('rune');burst(e.x,ecy(e),'#cfd8ff',50,90,1.2);
   enemies.forEach(x=>{if(x.wave&&x.wave===e.wave&&!x.dead){x.dead=true;burst(x.x,x.y-5,'#9a8fa8',8,50,.4)}});

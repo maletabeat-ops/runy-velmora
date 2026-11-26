@@ -1,15 +1,19 @@
 'use strict';
 /* ===== zones: Act I areas, props, exits, gates ===== */
-const PROPDEF={oak:{fw:2,fh:1},spruce:{fw:1,fh:1},birch:{fw:1,fh:1},deadtree:{fw:1,fh:1},cottage:{fw:4,fh:2},treehouse:{fw:3,fh:2},well:{fw:2,fh:1},lantern:{fw:1,fh:1,light:44},
-  signpost:{fw:1,fh:1},fence:{fw:2,fh:1},rock:{fw:2,fh:1},mossrock:{fw:1,fh:1},bush:{fw:1,fh:1},stump:{fw:1,fh:1},pillar:{fw:1,fh:1},campfire:{fw:2,fh:1,light:80,fire:true},shard:{fw:1,fh:1,light:60},mushrooms:{fw:0,fh:0,light:22}};
+const PROPDEF={oak:{fw:2,fh:1},spruce:{fw:1,fh:1},birch:{fw:1,fh:1},deadtree:{fw:1,fh:1},cottage:{fw:4,fh:2,win:1},treehouse:{fw:4,fh:2},well:{fw:2,fh:1},lantern:{fw:1,fh:1,light:44},
+  signpost:{fw:1,fh:1},fence:{fw:2,fh:1},rock:{fw:2,fh:1},mossrock:{fw:1,fh:1},bush:{fw:1,fh:1},stump:{fw:1,fh:1},pillar:{fw:1,fh:1},campfire:{fw:2,fh:1,light:80,fire:true},shard:{fw:1,fh:1,light:60},mushrooms:{fw:0,fh:0,light:22},
+  house2:{fw:4,fh:2,win:1},house3:{fw:5,fh:2,win:1},tavern:{fw:5,fh:3,win:1},smithy:{fw:5,fh:2,win:1,light:50,fire:true},shop:{fw:4,fh:2,win:1},temple:{fw:5,fh:3,win:1,light:60},mill:{fw:3,fh:2},coop:{fw:3,fh:1},tent:{fw:3,fh:1},
+  fountain:{fw:3,fh:2},garden:{fw:3,fh:1},stall_r:{fw:2,fh:1},stall_b:{fw:2,fh:1},stall_g:{fw:2,fh:1},statue:{fw:1,fh:1,light:36},board:{fw:2,fh:1},doghouse:{fw:2,fh:1},hay:{fw:2,fh:1},
+  cart:{fw:2,fh:1},logs:{fw:2,fh:1},laundry:{fw:0,fh:0},flags:{fw:0,fh:0},garland:{fw:0,fh:0,light:30},gate:{fw:0,fh:0},stairs:{fw:2,fh:1},flowerbed:{fw:2,fh:1},bench:{fw:1,fh:1},
+  barrel:{fw:1,fh:1},crates:{fw:1,fh:1},sacks:{fw:1,fh:1},apples:{fw:0,fh:0},pots:{fw:1,fh:1},hive:{fw:1,fh:1},anvil:{fw:1,fh:1},target:{fw:1,fh:1},scarecrow:{fw:1,fh:1},mailbox:{fw:1,fh:1},boat:{fw:0,fh:0}};
 const ZONES={
- village:{n:'Светлый Ручей',biome:'village',w:44,h:34,lv:[1,1],safe:true,music:'village',gen:genVillage},
+ village:{n:'Светлый Ручей',biome:'village',w:64,h:50,lv:[1,1],safe:true,music:'village',gen:genVillage},
  forest:{n:'Шепчущий лес',biome:'forest',w:72,h:56,lv:[1,4],foes:{wolf:3,spider:2,boar:1,sporeling:2},cap:20,music:'wild',gen:genForest},
  marsh:{n:'Туманные топи',biome:'marsh',w:64,h:52,lv:[4,7],foes:{mistborn:3,sporeling:2,spider:1,cultist:2},cap:22,music:'dark',gen:genMarsh,fog:true}
 };
-let ZONE=null,ZID='village',PROPS=[],EXITS=[],SAFE=null,ZPOINTS={};
+let CRIT=[],CHK=null,ZONE=null,ZID='village',PROPS=[],EXITS=[],SAFE=null,ZPOINTS={};
 const inVil=(tx,ty)=>!!SAFE&&tx>=SAFE.x0&&tx<=SAFE.x1&&ty>=SAFE.y0&&ty<=SAFE.y1;
-function addProp(img,tx,ty,o={}){const d=PROPDEF[img]||{fw:1,fh:1};const p={img,x:tx*16+8+(o.dx||0),y:ty*16+14+(o.dy||0),tx,ty,...d,...o};PROPS.push(p);
+function addProp(img,tx,ty,o={}){const d=PROPDEF[img]||{fw:1,fh:1};const p={img,x:tx*16+8+(o.dx!=null?o.dx:(d.fw>0&&d.fw%2===0?8:0)),y:ty*16+14+(o.dy||0),tx,ty,...d,...o};PROPS.push(p);
   for(let y=ty-d.fh+1;y<=ty;y++)for(let x=tx-((d.fw-1)>>1);x<tx-((d.fw-1)>>1)+d.fw;x++)if(x>=0&&y>=0&&x<W&&y<H&&d.fw>0)col[y*W+x]=1;return p}
 function carve(pts,wd,t=T.PATH){for(let i=1;i<pts.length;i++){const[a,b]=[pts[i-1],pts[i]];const n=Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]))*2||1;
   for(let k=0;k<=n;k++){const x=Math.round(a[0]+(b[0]-a[0])*k/n),y=Math.round(a[1]+(b[1]-a[1])*k/n);for(let dy=0;dy<wd;dy++)for(let dx=0;dx<wd;dx++){const xx=x+dx-(wd>>1),yy=y+dy-(wd>>1);const c=at(xx,yy);if(c===T.WATER||c===T.SHALLOW)set(xx,yy,T.BRIDGE);else if(c!==T.BRIDGE)set(xx,yy,t)}}}}
@@ -22,22 +26,43 @@ function sprinkle(R,n,kinds,ok){for(let k=0;k<n*8&&n>0;k++){const x=2+((R()*(W-4
 function baseFill(R,dark){for(let y=0;y<H;y++)for(let x=0;x<W;x++){const q=R(),n=Math.sin(x*.23+y*.11)+Math.cos(y*.19-x*.07);map[y*W+x]=q<.05?T.FLOWERS:(dark&&n>.4)?T.DARK:T.GRASS}}
 function exitBand(x0,y0,x1,y1,to,arrive){rect(x0,y0,x1,y1,T.EXIT);EXITS.push({x0,y0,x1,y1,to,arrive})}
 /* ----- village: Светлый Ручей ----- */
-function genVillage(){const R=mulberry32(101);baseFill(R,false);
-  for(let y=0;y<H;y++)for(let x=34;x<=36;x++)set(x+Math.round(Math.sin(y*.3)*1),y,x===35?T.WATER:T.SHALLOW);
-  carve([[21,0],[21,8],[20,17],[21,24],[21,33]],2);carve([[4,17],[14,17],[20,17],[30,17],[38,16],[42,16]],2);carve([[21,9],[28,9]],2);carve([[12,24],[20,24]],2);
-  exitBand(20,0,22,0,'forest','s');
-  SAFE={x0:0,y0:0,x1:W-1,y1:H-1};
-  addProp('treehouse',29,8);ZPOINTS.irel={x:29*16+8,y:10*16+8};
-  addProp('cottage',10,13);ZPOINTS.motta={x:10*16+8,y:15*16};
-  addProp('cottage',39,12);ZPOINTS.kornel={x:39*16+8,y:14*16};addProp('rock',41,14);
-  addProp('cottage',13,28);ZPOINTS.lucia={x:13*16+8,y:30*16};
-  addProp('cottage',28,27);ZPOINTS.born={x:28*16+8,y:29*16};
-  addProp('well',17,20);addProp('campfire',24,21);
-  [[19,6],[23,6],[18,15],[24,15],[19,26],[23,26],[31,15]].forEach(([x,y])=>addProp('lantern',x,y));
-  addProp('signpost',23,3);[[6,20],[8,20],[33,23],[33,25]].forEach(([x,y])=>addProp('fence',x,y));
-  addProp('stump',15,9);addProp('bush',26,12);addProp('bush',6,10);addProp('mushrooms',30,23);addProp('mossrock',8,31);
-  forestFill(R,.18,{oak:3,spruce:2,birch:3},(x,y)=>x>4&&x<W-5&&y>3&&y<H-3);
-  ZPOINTS.n={x:21*16+8,y:2*16+8};ZPOINTS.spawn={x:21*16+8,y:19*16}}
+function genVillage(){const R=mulberry32(101);baseFill(R,false);CRIT=[];
+  const sx=y=>55+Math.round(Math.sin(y*.25)*1.2);
+  for(let y=0;y<H;y++){const c=sx(y);for(let x=c-2;x<=c+2;x++)set(x,y,Math.abs(x-c)<=1?T.WATER:T.SHALLOW)}
+  carve([[30,0],[30,46]],2);carve([[2,24],[62,24]],2);rect(23,19,37,29,T.PATH);
+  carve([[30,14],[41,14]],2);carve([[21,12],[30,12]],2);carve([[9,24],[9,13]],2);carve([[17,25],[17,40]],2);carve([[9,40],[17,40]],2);carve([[37,29],[46,34]],2);carve([[30,42],[38,42]],2);
+  exitBand(29,0,31,0,'forest','s');SAFE={x0:0,y0:0,x1:W-1,y1:H-1};const P_=(k,x,y)=>ZPOINTS[k]={x:x*16+8,y:y*16+8};
+  /* north: gate, guard drill, temple, Irel */
+  addProp('gate',30,3,{dx:0});addProp('target',35,5);addProp('target',37,7);addProp('barrel',26,4);addProp('crates',25,5);
+  addProp('treehouse',21,10);P_('irel',22,12);addProp('lantern',25,11);addProp('flowerbed',17,12);
+  addProp('temple',41,11);P_('owl',41,13);addProp('statue',37,12);addProp('statue',45,12);addProp('bench',35,16);P_('turtle',36,16);addProp('pots',47,10);
+  /* plaza & market */
+  addProp('fountain',30,26);P_('spawn',30,21);P_('n',30,2);
+  addProp('stall_r',25,20);addProp('stall_b',34,20);addProp('stall_g',25,29);addProp('apples',23,20);addProp('crates',37,20);addProp('sacks',23,29);addProp('barrel',27,29);
+  addProp('flags',27,18);addProp('garland',33,18);addProp('garland',23,24);addProp('flags',37,26);addProp('bench',24,26);addProp('bench',36,23);
+  P_('mouse',25,22);P_('baker',27,27);P_('kids',33,27);addProp('board',35,29);P_('born',37,30);
+  [[27,16],[33,16],[22,21],[38,21],[22,28],[38,28],[27,32],[33,32],[13,22],[47,22],[33,40],[21,38]].forEach(([x,y])=>addProp('lantern',x,y));
+  /* west: smithy, mill, farm, mine */
+  addProp('smithy',17,19);P_('kornel',17,21);addProp('anvil',21,21);addProp('logs',12,20);addProp('barrel',21,18);
+  addProp('mill',6,11);addProp('hay',2,14);addProp('hay',12,13);addProp('scarecrow',12,16);addProp('garden',5,17);addProp('garden',5,20);addProp('hive',1,17);addProp('hive',1,19);
+  addProp('stairs',12,29);P_('mole',14,30);addProp('crates',9,29);addProp('sacks',9,30);
+  addProp('house3',8,37);P_('motta',8,39);addProp('pots',3,38);addProp('mushrooms',13,38);
+  addProp('coop',18,44);addProp('hay',22,44);
+  /* east: tavern, shop, homes, stream */
+  addProp('tavern',41,19);P_('cat',41,21);addProp('barrel',45,19);addProp('barrel',46,20);addProp('bench',38,17);
+  addProp('house2',49,18);addProp('doghouse',51,21);addProp('mailbox',47,20);
+  addProp('shop',46,31);P_('lucia',46,33);addProp('mailbox',43,32);addProp('flowerbed',49,33);
+  addProp('house2',39,40);addProp('laundry',43,38);addProp('pots',35,40);addProp('mailbox',41,42);
+  addProp('cottage',24,40);addProp('flowerbed',27,41);P_('squirrel',26,44);addProp('cart',24,44);addProp('logs',21,41);
+  addProp('tent',59,28);P_('raven',59,30);addProp('campfire',61,31,{dx:0});addProp('boat',sx(37),37);P_('frog',sx(33)-3,33);addProp('crates',57,27);
+  /* green */
+  addProp('oak',14,8);addProp('birch',48,5);addProp('oak',52,11);addProp('birch',34,45);addProp('oak',46,45);addProp('bush',19,14);addProp('bush',43,27);addProp('bush',51,37);addProp('stump',4,27);addProp('mossrock',13,46);addProp('birch',3,32);addProp('oak',36,35);
+  forestFill(R,.18,{oak:3,spruce:2,birch:3},(x,y)=>x>3&&x<W-4&&y>3&&y<H-4);
+  /* critters */
+  const C=(img,x,y,o)=>CRIT.push({lf:img!=='cat',img,x:x*16+8,y:y*16+8,hx:x*16+8,hy:y*16+8,t:R()*5,vx:0,vy:0,fl:false,...o});
+  for(let i=0;i<5;i++)C('chicken',16+i%3*2,46-(i>>1)%2,{r:28,sp:16});for(let i=0;i<3;i++)C('duck',sx(12+i*10),12+i*10,{r:30,sp:8,water:1});
+  C('cat',40,22,{r:40,sp:14});C('crow',5,15,{r:20,sp:10,crow:1});C('crow',10,18,{r:20,sp:10,crow:1});C('crow',33,44,{r:20,sp:10,crow:1});
+  [[18,13],[50,22],[28,42],[6,16],[34,15],[50,35],[3,36]].forEach(([x,y])=>C('butterfly',x,y,{r:24,sp:12,fly:1}))}
 /* ----- forest: Шепчущий лес ----- */
 function genForest(){const R=mulberry32(202);baseFill(R,true);
   disc(14,40,4,T.WATER);disc(14,40,5,T.SHALLOW);disc(14,40,3,T.WATER);
@@ -67,7 +92,7 @@ function genMarsh(){const R=mulberry32(303);for(let y=0;y<H;y++)for(let x=0;x<W;
 const REGTILES=[];
 function loadZone(id,arrive){const Z=ZONES[id];if(!Z){toast('Этот путь откроется во втором акте','#cfd8ff');return false}
   if(P&&ZID&&G.zoneFog)G.zoneFog[ZID]=fogPack();
-  ZID=id;ZONE=Z;W=Z.w;H=Z.h;WW=W*TS;WH=H*TS;map=new Uint8Array(W*H);col=new Uint8Array(W*H);PROPS=[];EXITS=[];SAFE=null;ZPOINTS={};BIO=BIOME[Z.biome];
+  ZID=id;ZONE=Z;W=Z.w;H=Z.h;WW=W*TS;WH=H*TS;map=new Uint8Array(W*H);col=new Uint8Array(W*H);PROPS=[];EXITS=[];CRIT=[];SAFE=null;ZPOINTS={};BIO=BIOME[Z.biome];
   Z.gen();renderWorld();buildMM();const mm=$('mm'),k=Math.max(2,Math.floor(Math.min(180/W,130/H)));mm.width=W*k;mm.height=H*k;mm.style.width=W*k+'px';mm.style.height=H*k+'px';mm.dataset.k=k;
   if(G.zoneFog&&G.zoneFog[id])fogUnpack(G.zoneFog[id]);else resetFog();
   REGTILES.length=0;for(let i=0;i<W*H;i++){const t=map[i];if(!SOLID.has(t)&&!col[i]&&t!==T.EXIT&&t!==T.SHALLOW&&t!==T.WATER)REGTILES.push(i)}

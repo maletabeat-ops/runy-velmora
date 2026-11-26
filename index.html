@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700&family=Alegreya+Sans:wght@400;500;700&display=swap">
 <style>
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 /* Layout: full-screen pixel canvas; HUD pinned to corners; parchment-and-plum UI on night ink (single dark look by choice) */
 :root{--night:#0f0d14;--panel:#1d1726;--panel2:#151019;--edge:#4a3a58;--parch:#ecdfc3;--gold:#f2c14e;--gold-d:#8a5f14;--muted:#a99cb8;
   --f-title:"Alegreya SC",Georgia,"Times New Roman",serif;--f-body:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark}
@@ -238,9 +237,29 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
 @media (max-width:760px){.cards{grid-template-columns:1fr}.ccard .cd{min-height:0}.ib{grid-template-columns:1fr}.eq{grid-template-columns:repeat(5,auto);justify-content:start}}
 @media (max-width:640px){.bars{width:124px}.lvl{width:34px;height:34px;font-size:16px}#mm{width:100px;height:80px}#quest{font-size:12px;max-width:140px}
   #boss{top:auto;bottom:calc(140px + env(safe-area-inset-bottom,0px));width:72vw}#dTxt{font-size:16px}#region{font-size:22px}}
+
+/* cover main menu */
+.menuov{background:#07060d;overflow:hidden auto}
+.cover{position:fixed;inset:0;overflow:hidden;z-index:0}
+.cover img{position:absolute;inset:-4%;width:108%;height:108%;object-fit:cover;object-position:32% 50%;image-rendering:pixelated;animation:kb 48s ease-in-out infinite alternate}
+.cover::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 38% 70% at 50% 52%,rgba(7,6,16,.62),rgba(7,6,16,0) 70%),linear-gradient(rgba(7,6,16,.15),rgba(7,6,16,0) 30%,rgba(7,6,16,.55));transition:background .4s}
+.menuov.sub .cover::after{background:rgba(7,6,16,.78)}
+@keyframes kb{from{transform:scale(1) translate(0,0)}to{transform:scale(1.06) translate(-1.5%,-1%)}}
+.twk i{position:absolute;width:3px;height:3px;background:#e6f0ff;box-shadow:0 0 6px #9fc4ff;animation:tw 3s ease-in-out infinite;opacity:0}
+@keyframes tw{50%{opacity:.9}}
+@media (prefers-reduced-motion:reduce){.cover img,.twk i{animation:none}}
+.menuov>.mmwrap{position:relative;z-index:1}
+#mmMain{gap:10px;padding:clamp(16px,5vh,48px) 16px}
+#mmMain .logo h1{font-size:clamp(40px,7.5vw,78px);line-height:.95;color:#f6e7b8;text-shadow:0 4px 0 #3a2410,0 0 28px rgba(160,200,255,.45)}
+#mmMain .logo .pre{margin:0;font:700 13px var(--f-body);letter-spacing:.3em;text-transform:uppercase;color:#b8c8ff}
+#mmMain .logo .sub{margin:6px 0 0;color:#d8d0e8;font-size:15px;text-shadow:0 2px 0 #000}
+#mmMain .mbtn{background:linear-gradient(rgba(46,36,64,.88),rgba(26,19,34,.92));backdrop-filter:blur(2px)}
+#mmMain .keysline,#mmMain .touchnote{text-shadow:0 2px 0 #000}
+.slot img.skimg{position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);border-radius:4px;image-rendering:auto}
+.slot .c,.slot .k,.slot .lk{z-index:1;text-shadow:0 1px 0 #000,0 0 3px #000}
+.sks li{display:flex;gap:10px;align-items:center}.skli{width:34px;height:34px;border-radius:4px;flex:none}
 </style>
 
-</head><body>
 <div id="game">
   <canvas id="cv"></canvas>
   <div id="hud" hidden>
@@ -268,8 +287,9 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
   <div id="dlg" class="pnl" hidden><img id="dPorL" class="dpor" alt="" hidden><img id="dPorR" class="dpor r" alt="" hidden><div class="dbody"><div id="dWho"></div><p id="dTxt"></p><div class="chs" id="dCh" hidden></div><div class="more" id="dMore">E / пробел ▸</div></div></div>
 
   <section class="ov menuov" id="ovTitle">
+    <div class="cover" aria-hidden="true"><img id="mCover" src="art/cover.jpg" alt=""><div class="twk" id="twk"></div></div>
     <div class="mmwrap" id="mmMain">
-      <div class="logo"><img id="mLogo" alt=""><h1>Расколотая Луна</h1><p class="sub">Акт I: Пробуждение. Лунный заяц Рейн, осколки луны и Орден Затмения</p></div>
+      <div class="logo"><img id="mLogo" alt="" hidden><p class="pre">Акт I · Пробуждение</p><h1>Расколотая<br>Луна</h1><p class="sub">Лунный заяц Рейн, осколки луны и Орден Затмения</p></div>
       <nav class="mmnav">
         <button class="mbtn" id="mContinue" data-ico="play" hidden><span>Продолжить<small id="mContInfo"></small></span></button>
         <button class="mbtn" id="mNew" data-ico="star"><span>Новая игра</span></button>
@@ -370,6 +390,4 @@ b.up{color:#7fe07a}b.down{color:#ff8a7a}
 <script src="ui.js"></script>
 <script src="input.js"></script>
 <script src="menu.js"></script>
-
-<script>if("serviceWorker" in navigator&&location.protocol==="https:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
 </body></html>

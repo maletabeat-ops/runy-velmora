@@ -160,3 +160,5 @@ const BOUNTIES=[
  {t:'Чистые топи',foes:['mistborn','sporeling'],n:12,gold:180,d:'Очисти Туманные топи: 12 туманников или споровиков.'},
  {t:'Ряды Ордена',foes:['cultist'],n:12,gold:240,d:'Убей 12 культистов Ордена Затмения.'}
 ];
+
+const skIcon=(cls,s)=>'art/sk_'+(cls==='light'&&s.id==='heal'?'heal2':s.id)+'.png';

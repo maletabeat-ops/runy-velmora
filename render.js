@@ -13,16 +13,16 @@ function drawImg(n,x,y,flip,white,alpha){const I=IMG[n];if(!I)return;const w=I.W
 const imgH=n=>IMG[n]?IMG[n].H/AP:24,imgW=n=>IMG[n]?IMG[n].W/AP:16;
 function shadow(x,y,rx=6){ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(x,y+2,rx,rx*.32,0,0,7);ctx.fill()}
 function heroImg(){return heroSprFor(P.cls)}
-function drawPlayer(){const S=heroImg(),h=imgH(S);
+function drawPlayer(){let S=heroImg();const h=imgH(S);const walkF=P.moving&&P.cls==='ranger'&&IMG.rein_walk0&&P.dash<=0;if(walkF)S='rein_walk'+((P.anim*9|0)%4);
   for(const t of trails)drawImg(S,t.x,t.y,t.fl,true,t.life*1.6);
   if(P.buff>0){ctx.globalAlpha=.35+.15*Math.sin(G.time*8);ctx.fillStyle='#e0402e';ctx.beginPath();ctx.ellipse(P.x,P.y+2,10,3.5,0,0,7);ctx.fill();ctx.globalAlpha=1}
-  if(P.inv>0&&P.dash<=0&&(G.time*20|0)%2)return;shadow(P.x,P.y,imgW(S)*.32);const bob=P.moving?Math.abs(Math.sin(P.anim*11))*-1.2:Math.sin(G.time*2)*.3;
-  ctx.save();if(P.moving){ctx.translate(P.x,P.y);ctx.rotate(Math.sin(P.anim*11)*.05);ctx.translate(-P.x,-P.y)}drawImg(S,P.x,P.y+bob,P.fl);ctx.restore();
+  if(P.inv>0&&P.dash<=0&&(G.time*20|0)%2)return;shadow(P.x,P.y,imgW(S)*.32);const bob=walkF?0:P.moving?Math.abs(Math.sin(P.anim*11))*-1.2:Math.sin(G.time*2)*.3;
+  ctx.save();if(P.moving&&!walkF){ctx.translate(P.x,P.y);ctx.rotate(Math.sin(P.anim*11)*.05);ctx.translate(-P.x,-P.y)}drawImg(S,P.x,P.y+bob,P.fl);ctx.restore();
   if(P.shieldT>0){ctx.strokeStyle=`rgba(168,184,208,${.4+.2*Math.sin(G.time*8)})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(P.x,P.y-h/2,imgW(S)*.45,h*.55,0,0,7);ctx.stroke()}
   if(P.absorb>0){ctx.fillStyle=`rgba(207,216,255,${.12+.06*Math.sin(G.time*5)})`;ctx.strokeStyle='rgba(207,216,255,.6)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(P.x,P.y-h/2,h*.62,0,7);ctx.fill();ctx.stroke()}}
-function drawEnemy(e){const f=e.f,wh=e.flash>0,n=f.spr,h=imgH(n),w=imgW(n);
+function drawEnemy(e){const f=e.f,wh=e.flash>0,run=f.spr==='wolf'&&IMG.wolf_run0&&(Math.hypot(e.kx,e.ky)>1||e.ag)&&e.wind<=0,n=run?'wolf_run'+((e.t*10|0)%4):f.spr,h=imgH(n),w=imgW(n);
   if(e.elite||f.boss){ctx.globalAlpha=.35+.15*Math.sin(G.time*6);ctx.fillStyle=f.boss?'#8a5aff':'#f2c14e';ctx.beginPath();ctx.ellipse(e.x,e.y+2,w*.42,w*.13,0,0,7);ctx.fill();ctx.globalAlpha=1}
-  shadow(e.x,e.y,w*.32);const jit=e.wind>0?rr(.8):0,bob=f.ai==='ghost'||f.ghostly?Math.sin(G.time*3+e.hx)*2-2:Math.abs(Math.sin(e.t*9))*-(Math.hypot(e.kx,e.ky)>1||e.ag?1:0);
+  shadow(e.x,e.y,w*.32);const jit=e.wind>0?rr(.8):0,bob=run?0:f.ai==='ghost'||f.ghostly?Math.sin(G.time*3+e.hx)*2-2:Math.abs(Math.sin(e.t*9))*-(Math.hypot(e.kx,e.ky)>1||e.ag?1:0);
   drawImg(n,e.x+jit,e.y+bob,e.fl,wh,f.ghostly?.6+.25*Math.sin(G.time*4+e.hx):null);
   if(e.wind>0){const y=e.y-h-6;px(ctx,'#1a1420',e.x-1.5,y-6,3,8);px(ctx,'#e0402e',e.x-1,y-5,2,4);px(ctx,'#e0402e',e.x-1,y,2,1)}
   if(e.stun>0){for(let i=0;i<3;i++){const a=G.time*4+i*2.1;px(ctx,'#f2d48a',e.x+Math.cos(a)*6,e.y-h-2+Math.sin(a)*2,1.5,1.5)}}
@@ -54,7 +54,7 @@ function render(dt){
       if(p.fire){drawImg(p.img,p.x,p.y,false,false,a);return}drawImg(p.img,p.x,p.y,false,false,a);
       if(p.img==='shard'){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.25+.15*Math.sin(G.time*3);ctx.fillStyle='#8fb8ff';ctx.beginPath();ctx.arc(p.x,p.y-10,10,0,7);ctx.fill();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}}])}
   for(const c of CHESTS)if(inView(c.x,c.y))L.push([c.y,()=>{shadow(c.x,c.y-2,7);drawImg(c.open?'chest_open':'chest',c.x,c.y-1);if(!c.open&&Math.sin(G.time*3+c.x)>.85)px(ctx,'#fff3c4',c.x-3+((G.time*7|0)%7),c.y-10,1,1)}]);
-  for(const n of NPCS)if(inView(n.x,n.y))L.push([n.y,()=>{shadow(n.x,n.y,imgW(n.spr)*.3);drawImg(n.spr,n.x,n.y+Math.sin(G.time*2+n.x)*.3,P.x<n.x);
+  for(const n of NPCS)if(inView(n.x,n.y))L.push([n.y,()=>{shadow(n.x,n.y,imgW(n.spr)*.3);drawImg(n.spr,n.x,n.y+(n.mv?-Math.abs(Math.sin(G.time*10))*1.2:Math.sin(G.time*2+(n.hx||n.x))*.3),n.mv?n.fl:P.x<n.x);
     if(npcHas(n)){const h=imgH(n.spr),b=Math.abs(Math.sin(G.time*4))*2;px(ctx,'#1a1420',n.x-2,n.y-h-12-b,4,9);px(ctx,'#f2d48a',n.x-1,n.y-h-11-b,2,5);px(ctx,'#f2d48a',n.x-1,n.y-h-5-b,2,2)}}]);
   for(const p of pickups)if(inView(p.x,p.y))L.push([p.y,()=>{if(p.k!=='item'&&p.t>35&&(G.time*8|0)%2)return;const b=Math.abs(Math.sin(p.t*4))*2;shadow(p.x,p.y-1,3);
     if(p.k==='gold'){px(ctx,'#8a5f14',p.x-2,p.y-4-b,5,5);px(ctx,'#f2c14e',p.x-2,p.y-5-b,4,4);px(ctx,'#fff3c4',p.x-1,p.y-4-b,1,1)}
@@ -62,6 +62,8 @@ function render(dt){
     else if(p.k==='pot')ctx.drawImage(SPR[p.kind==='hp'?'pot':'potmp'],p.x-6,p.y-10-b);
     else{const c=RAR[p.it.rar].c;if(p.it.rar>=2){ctx.globalAlpha=.18+.08*Math.sin(G.time*4);ctx.fillStyle=c;ctx.fillRect(p.x-2,p.y-60,4,58);ctx.globalAlpha=1}
       ctx.globalAlpha=.5;ctx.fillStyle=c;ctx.beginPath();ctx.arc(p.x,p.y-6-b,7,0,7);ctx.fill();ctx.globalAlpha=1;ctx.drawImage(itemSpr(p.it),p.x-6,p.y-12-b)}}]);
+  for(const c of CRIT)if(inView(c.x,c.y)&&!c.gone){if(c.fly){L.push([c.y+40,()=>{const fl=(G.time*12+c.t)%2<1;ctx.globalAlpha=.9;drawImg('butterfly',c.x,c.y-14+Math.sin(G.time*3+c.t)*3,fl);ctx.globalAlpha=1}]);continue}
+    L.push([c.y,()=>{if(!c.water&&!c.air)shadow(c.x,c.y,imgW(c.img)*.28);const hop=c.mv&&!c.water?-Math.abs(Math.sin(G.time*12+c.t))*1.5:c.water?Math.sin(G.time*2+c.t)*.6:0;drawImg(c.img,c.x,c.y+hop-(c.air||0),c.fl,false,c.air?Math.max(0,1-c.air/80):null)}])}
   for(const e of enemies)if(inView(e.x,e.y))L.push([e.y,()=>drawEnemy(e)]);
   L.push([P.y,drawPlayer]);
   L.sort((a,b)=>a[0]-b[0]).forEach(l=>l[1]());
@@ -101,7 +103,7 @@ function render(dt){
     const light=(x,y,rad)=>{const X=(x-cx)*AP,Y=(y-cy)*AP,R=rad*AP;if(X<-R||Y<-R||X>dk.width+R||Y>dk.height+R)return;const g=dctx.createRadialGradient(X,Y,0,X,Y,R);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');dctx.fillStyle=g;dctx.beginPath();dctx.arc(X,Y,R,0,7);dctx.fill()};
     const rb=(RACES[P.race]||{}).b||{};light(P.x,P.y-10,(rb.light?150:105)+(P.flags.lantern?25:0));
     for(const p of PROPS)if(p.light)light(p.x,p.y-10,p.light*(p.fire?1+.08*Math.sin(G.time*13):1));
-    for(const p of PROPS)if(p.img==='cottage'||p.img==='treehouse')light(p.x,p.y-16,30);
+    for(const p of PROPS)if(p.img==='cottage'||p.img==='treehouse'||p.win)light(p.x,p.y-16,p.win?40:30);
     for(const p of proj)if(p.owner==='p')light(p.x,p.y,30);for(const w of warns)light(w.x,w.y,30);
     ctx.drawImage(dk,0,0)}
   ctx.drawImage(vg,0,0);

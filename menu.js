@@ -53,10 +53,11 @@ $('bReset').addEventListener('click',()=>{BINDS=JSON.parse(JSON.stringify(DEFAUL
 function mountSettings(where){$(where).appendChild($('setBlock'));syncSet();renderBinds()}
 
 /* ----- main menu ----- */
-function showScreen(id){['mmMain','mmNew','mmSet'].forEach(s=>$(s).hidden=s!==id)}
+function showScreen(id){['mmMain','mmNew','mmSet'].forEach(s=>$(s).hidden=s!==id);$('ovTitle').classList.toggle('sub',id!=='mmMain')}
+{const tw=$('twk');for(let i=0;i<34;i++){const s=document.createElement('i');s.style.left=(Math.random()*100)+'%';s.style.top=(Math.random()*48)+'%';s.style.animationDelay=(Math.random()*3)+'s';s.style.animationDuration=(2+Math.random()*3)+'s';if(Math.random()<.3){s.style.width=s.style.height='2px'}tw.appendChild(s)}}
 function showMain(){G.state='title';$('hud').hidden=true;$('ovTitle').hidden=false;['ovMenu','ovWin','ovDead','ovInv','ovMap'].forEach(i=>$(i).hidden=true);$('dlg').hidden=true;
   const sv=loadSave();$('mContinue').hidden=!sv;if(sv&&CLS[sv.cls])$('mContInfo').textContent=`Рейн, ${CLS[sv.cls].n}, ур. ${sv.lvl}`;else $('mContinue').hidden=true;
-  $('mLogo').src=artURL(heroSprFor(sv&&CLS[sv.cls]?sv.cls:'ranger'),3);showScreen('mmMain')}
+  showScreen('mmMain')}
 $('mContinue').addEventListener('click',()=>{const sv=loadSave();if(sv)beginGame(sv.cls,sv.race,sv)});
 $('mNew').addEventListener('click',()=>{NG.armed=false;renderNew();showScreen('mmNew')});
 $('mSettings').addEventListener('click',()=>{mountSettings('mmSetBody');showScreen('mmSet')});
@@ -73,7 +74,7 @@ function renderNew(){const c=CLS[NG.cls],r=RACES[NG.race];
   const st=$('pvStats');st.innerHTML='';previewStats(NG.cls,NG.race).forEach(([a,b])=>st.append(el('dt','',a),el('dd','',String(b))));
   const sts=$('pvAttr');sts.innerHTML='';STATS.forEach(k=>{const d=el('div','pip',`<span>${STATN[k]}</span><b>${r.st[k]}</b>`);sts.appendChild(d)});
   const cc=$('clsChips');cc.innerHTML='';Object.keys(CLS).forEach(k=>{const b=el('button','chip'+(k===NG.cls?' on':''));const i=el('img');i.src=IMG['rein_'+k]?artURL('rein_'+k,1):(ICON[CLS[k].w.icon]||ICON.sword);i.alt='';b.append(i,CLS[k].n);b.addEventListener('click',()=>{NG.cls=k;renderNew()});cc.appendChild(b)});
-  $('clsDesc').textContent=c.d;$('clsSk').innerHTML=c.sk.map(s=>`<li><span style="color:${s.col}">${s.ic}</span> ${s.n} <small>ур. ${s.lv} · ${s.d}</small></li>`).join('');
+  $('clsDesc').textContent=c.d;$('clsSk').innerHTML=c.sk.map(s=>`<li><img class="skli" src="${skIcon(NG.cls,s)}" alt=""><span>${s.n} <small>ур. ${s.lv} · ${s.d}</small></span></li>`).join('');
   const rc=$('raceChips');rc.innerHTML='';Object.keys(RACES).forEach(k=>{const b=el('button','chip'+(k===NG.race?' on':''));const i=el('img');i.src=artURL(RACES[k].por,1);i.alt='';b.append(i,RACES[k].n);b.addEventListener('click',()=>{NG.race=k;renderNew()});rc.appendChild(b)});
   $('raceDesc').textContent=r.d+' Особенность: '+r.perk;
   const sv=loadSave();$('ngStart').textContent=NG.armed?'Точно? Старый герой пропадёт':'В путь';$('ngStart').classList.toggle('warn',NG.armed);$('ngWarn').hidden=!sv}

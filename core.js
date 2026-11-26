@@ -22,7 +22,7 @@ function cnv(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;
 function px(c,col,x,y,w=1,h=1){c.fillStyle=col;c.fillRect(x,y,w,h)}
 
 /* ----- art (images made by the player in Nano Banana) ----- */
-const ART_NAMES='irel,hare,moth,guard,wolf,p_irel,campfire,cultist,mistborn,p_glowbug,mushrooms,b_mistwitch,b_devourer,p_moth,p_motta,birch,b_nox,boar,pillar,bush,p_nox,deadtree,nox,glowbug,p_hare,oak,shard,mossrock,motta,rock,p_shard,spider,spruce,well,chest_open,treehouse,cottage,p_halfmoon,halfmoon_n,fence,signpost,p_kornel,kornel,p_rootfolk,rootfolk,sporeling,b_executioner,stump,halfmoon_d,lantern,chest'.split(',');
+const ART_NAMES='irel,hare,moth,guard,wolf,p_irel,campfire,cultist,mistborn,p_glowbug,mushrooms,b_mistwitch,b_devourer,p_moth,p_motta,birch,b_nox,boar,pillar,bush,p_nox,deadtree,nox,glowbug,p_hare,oak,shard,mossrock,motta,rock,p_shard,spider,spruce,well,chest_open,treehouse,cottage,p_halfmoon,halfmoon_n,fence,signpost,p_kornel,kornel,p_rootfolk,rootfolk,sporeling,b_executioner,stump,halfmoon_d,lantern,chest,scarecrow,stairs,mailbox,gate,butterfly,laundry,barrel,doghouse,house2,house3,board,flags,fountain,garland,temple,flowerbed,apples,cat,chicken,coop,smithy,shop,boat,mill,sacks,target,anvil,garden,tent,logs,stall_r,stall_b,stall_g,bench,statue,hay,tavern,cart,pots,hive,duck,crow,crates,v_badger,v_squirrel,v_kids,v_cat,v_mole,v_frog,v_mouse,v_hedgehog,v_owl,v_turtle,v_raven,p_rein_angry,p_rein_hurt,p_rein_surprised,rein_guardian,rein_blade,rein_ranger,rein_mage,rein_druid,rein_light,p_rein'.split(',');
 const IMG={};
 function prepImg(name,img){const w=img.width,h=img.height,c=cnv(w,h);c.getContext('2d').drawImage(img,0,0);
   const f=cnv(w,h),fx=f.getContext('2d');fx.translate(w,0);fx.scale(-1,1);fx.drawImage(c,0,0);
@@ -30,8 +30,9 @@ function prepImg(name,img){const w=img.width,h=img.height,c=cnv(w,h);c.getContex
   IMG[name]={c,f,w:wh(c),fw:wh(f),W:w,H:h,url:null}}
 const ATLAS={};
 function loadAtlas(){return Promise.all([['base','tiles/lpc_base.png'],['build','tiles/lpc_build.png']].map(([k,u])=>new Promise(res=>{const i=new Image();i.onload=()=>{ATLAS[k]=i;res()};i.onerror=()=>res();i.src=u})))}
-const OPT_ART=['rein_guardian','rein_blade','rein_ranger','rein_mage','rein_druid','rein_light','p_rein'];
-function loadArt(){return Promise.all([loadAtlas(),...OPT_ART.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>res();i.src='art/'+n+'.png'})),...ART_NAMES.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>{console.error('art missing',n);res()};i.src='art/'+n+'.png'}))])}
+const OPT_ART=[];const SHEETS={sheet_rein_walk:['rein_walk',4],sheet_wolf_run:['wolf_run',4]};
+function sliceSheet(src,img){const[n,k]=SHEETS[src],fw=img.width/k;for(let i=0;i<k;i++){const c=cnv(fw,img.height);c.getContext('2d').drawImage(img,-i*fw,0);prepImg(n+i,c)}}
+function loadArt(){return Promise.all([loadAtlas(),...Object.keys(SHEETS).map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{sliceSheet(n,i);res()};i.onerror=()=>res();i.src='art/'+n+'.png'})),...OPT_ART.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>res();i.src='art/'+n+'.png'})),...ART_NAMES.map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{prepImg(n,i);res()};i.onerror=()=>{console.error('art missing',n);res()};i.src='art/'+n+'.png'}))])}
 function artURL(n,scale=1){const I=IMG[n];if(!I)return'';const k='u'+scale;if(I[k])return I[k];const c=cnv(I.W*scale,I.H*scale),x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(I.c,0,0,c.width,c.height);return I[k]=c.toDataURL()}
 
 /* ----- small code-drawn sprites: item icons ----- */

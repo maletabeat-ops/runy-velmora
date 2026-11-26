@@ -135,3 +135,15 @@ function updateMisc(dt){
     if(z==='marsh')parts.push({x:P.x+rr(VW/2),y:P.y+rr(VH/2),vx:5+rr(3),vy:rr(1),life:5,max:5,col:'rgba(210,220,230,.10)',size:14,g:0})}
   for(const p of PROPS)if(p.fire&&Math.random()<dt*8&&Math.abs(p.x-P.x)<VW)parts.push({x:p.x+rr(4),y:p.y-6,vx:rr(4),vy:-24-Math.random()*14,life:.7,max:.7,col:Math.random()<.5?'#ffb03a':'#ff6a2a',size:1,g:0});}
 function spawnTick(dt){G.spawnT-=dt;if(G.spawnT>0)return;G.spawnT=2.4;if(ZONE&&ZONE.cap&&enemies.filter(e=>!e.wave&&!e.dead).length<ZONE.cap)spawnInZone(220)}
+/* ----- village critters ----- */
+function critTick(dt){for(const c of CRIT){c.t+=dt;
+  if(c.fly){c.x=c.hx+Math.sin(c.t*.7)*c.r+Math.sin(c.t*2.3)*4;c.y=c.hy+Math.cos(c.t*.9)*c.r*.6;continue}
+  if(c.crow){if(c.gone){c.back-=dt;if(c.back<=0&&Math.hypot(P.x-c.hx,P.y-c.hy)>90){c.gone=false;c.air=0;c.x=c.hx;c.y=c.hy}continue}
+    if(c.air){c.air+=dt*55;c.x+=c.vx*dt;if(c.air>80){c.gone=true;c.back=10+Math.random()*10}continue}
+    if(Math.hypot(P.x-c.x,P.y-c.y)<34){c.air=1;c.vx=(c.x>=P.x?1:-1)*70;c.fl=(c.vx<0)!==!!c.lf;c.mv=0;continue}}
+  const dp=Math.hypot(P.x-c.x,P.y-c.y);c.wt=(c.wt||0)-dt;
+  if(!c.water&&!c.crow&&dp<22){const a=Math.atan2(c.y-P.y,c.x-P.x);c.tx=c.x+Math.cos(a)*24;c.ty=c.y+Math.sin(a)*24;c.wt=1.2}
+  else if(c.wt<=0){c.wt=1+Math.random()*3;if(Math.random()<.65){const a=Math.random()*6.283,r=Math.random()*c.r;c.tx=c.water?c.hx+rr(6):c.hx+Math.cos(a)*r;c.ty=c.hy+Math.sin(a)*r}else c.tx=null}
+  if(c.tx==null){c.mv=0;continue}const dx=c.tx-c.x,dy=c.ty-c.y,d=Math.hypot(dx,dy);if(d<1.5){c.tx=null;c.mv=0;continue}
+  const sp=c.sp*(dp<22?2.2:1)*dt,nx=c.x+dx/d*sp,ny=c.y+dy/d*sp;
+  if(!c.water&&blocked(nx,ny,3,'e')){c.tx=null;c.mv=0;continue}c.x=nx;c.y=ny;c.mv=1;if(Math.abs(dx)>.5)c.fl=(dx<0)!==!!c.lf}}

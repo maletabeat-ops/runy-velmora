@@ -7,7 +7,7 @@ function buildHotbar(){const hb=$('hotbar');hb.innerHTML='';const c=CLS[P.cls];
     b.addEventListener('pointerdown',e=>{e.preventDefault();if(G.state==='dialog'){advance();return}if(G.state!=='play')return;if(act==='attack')touchAtk=true;else actQ.add(act)});
     const up=()=>{if(act==='attack')touchAtk=false};b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up);return b};
   slotEls.atk=mkS('attack',kb('attack'),`<img class="ic" src="${ICON[weaponIcon(P.cls)]}" alt="">`,'s-attack','Атака');
-  c.sk.forEach((s,i)=>{slotEls['s'+i]=mkS('skill'+i,kb('skill'+i),`<span class="ic" style="color:${s.col}">${s.ic}</span><span class="c">${s.mp}</span><span class="lk">ур.${s.lv}</span>`,'s-skill',`${s.n}: ${s.d}. ${s.mp} маны`)});
+  c.sk.forEach((s,i)=>{slotEls['s'+i]=mkS('skill'+i,kb('skill'+i),`<img class="ic skimg" src="${skIcon(P.cls,s)}" alt=""><span class="c">${s.mp}</span><span class="lk">ур.${s.lv}</span>`,'s-skill',`${s.n}: ${s.d}. ${s.mp} маны`)});
   slotEls.hp=mkS('pot_hp',kb('pot_hp'),`<img class="ic" src="${ICON.pot}" alt=""><span class="n"></span>`,'s-pot','Зелье здоровья');
   slotEls.mp=mkS('pot_mp',kb('pot_mp'),`<img class="ic" src="${ICON.potmp}" alt=""><span class="n"></span>`,'s-pot','Зелье маны');
   slotEls.use=mkS('use','E','<span class="ic etext">E</span>','s-use','Говорить');
@@ -37,7 +37,7 @@ function drawMini(m,s){m.imageSmoothingEnabled=false;m.clearRect(0,0,m.canvas.wi
 
 /* ----- inventory & shop ----- */
 let INV={mode:null,sel:null};
-function openInv(mode){INV.mode=mode||null;INV.sel=null;G.state='menu';$('ovInv').hidden=false;renderInv()}
+function openInv(mode){if(mode!=='herb')SHOPN=null;INV.mode=mode||null;INV.sel=null;G.state='menu';$('ovInv').hidden=false;renderInv()}
 function closeOv(){['ovInv','ovMap','ovMenu','ovTal','ovChar','ovJour'].forEach(i=>$(i).hidden=true);if(G.state==='menu')G.state='play';save()}
 function cell(it,onClick,selected,label){const b=el('button','cell'+(it?' r'+it.rar:' empty')+(selected?' sel':''));
   if(it){const img=el('img');img.src=itemIcon(it);img.alt='';b.appendChild(img);if(it.slot==='weapon'&&it.cls!==P.cls)b.classList.add('wrong')}
@@ -53,7 +53,7 @@ function itemHTML(it){const r=RAR[it.rar];let h=`<div class="iname" style="color
 function cmpTxt(it,k){const cur=P.eq[it.slot];if(!cur||cur===it||(it.slot==='weapon'&&it.cls!==P.cls))return'';const d=it[k]-(cur[k]||0);return d?` <b class="${d>0?'up':'down'}">${d>0?'▲ +':'▼ '}${d}</b>`:''}
 function act(label,fn,primary,disabled){const b=el('button','abtn'+(primary?' pri':''),label);b.disabled=!!disabled;b.addEventListener('click',fn);return b}
 function renderInv(){
-  const shop=INV.mode,inShop=shop==='smith'||shop==='herb';$('invTitle').textContent=({smith:'Кузница Гарры',herb:'Лавка Мирры',ship:'Верфь Ульфа',tavern:'Таверна «Пьяный кальмар»'})[shop]||'Снаряжение';renderExtra(shop);$('invGold').textContent=P.gold;
+  const shop=INV.mode,inShop=shop==='smith'||shop==='herb';$('invTitle').textContent=(shop==='herb'&&SHOPN)||({smith:'Кузница Корнеля',herb:'Травы Мотты'})[shop]||'Снаряжение';renderExtra(shop);$('invGold').textContent=P.gold;
   const eg=$('eqGrid');eg.innerHTML='';SLOTS.forEach(s=>{const w=el('div','eqs');w.append(el('span','eql',SLOTN[s]),cell(P.eq[s],()=>{INV.sel={src:'eq',k:s};renderInv()},INV.sel&&INV.sel.src==='eq'&&INV.sel.k===s,'—'));eg.appendChild(w)});
   const pw=el('div','eqs');pw.append(el('span','eql','Зелья'),el('div','pots',`<img src="${ICON.pot}" alt=""> ${P.pots.hp} &nbsp; <img src="${ICON.potmp}" alt=""> ${P.pots.mp}`));eg.appendChild(pw);
   const ml=$('matList');ml.innerHTML='';Object.entries(MATS).forEach(([k,m])=>{const e=el('span','mat',`${m.n}: <b>${P.mats[k]||0}</b>`);e.style.setProperty('--c',m.c);ml.appendChild(e)});
@@ -94,7 +94,7 @@ function showWin(){G.state='win';const m=Math.floor(G.time/60),s=Math.floor(G.ti
 function update(dt){
   G.time+=dt;G.shake=Math.max(0,G.shake-dt);
   updatePlayer(dt);if(G.state!=='play')return;
-  G.clock=(G.clock||0)+dt;G.rcT-=dt;if(G.rcT<=0){G.rcT=1;recalc()}checkExits();updateEnemies(dt);updateProj(dt);updateMisc(dt);spawnTick(dt);updateComp(dt);townTick(dt);if(G.inDun)dungeonTick(dt);if(G.state!=='play')return;
+  G.clock=(G.clock||0)+dt;G.rcT-=dt;if(G.rcT<=0){G.rcT=1;recalc()}checkExits();updateEnemies(dt);updateProj(dt);updateMisc(dt);if(CRIT.length)critTick(dt);npcTick(dt);spawnTick(dt);updateComp(dt);townTick(dt);if(G.inDun)dungeonTick(dt);if(G.state!=='play')return;
   findNear();if(actQ.has('use')&&G.near)interact(G.near);
   if(actQ.has('inv'))openInv();else if(actQ.has('map'))openMap();else if(actQ.has('tal'))openTal();else if(actQ.has('char'))openChar();else if(actQ.has('jour'))openJournal();
   G.fogT-=dt;if(G.fogT<=0){G.fogT=.25;reveal(P.x/16|0,P.y/16|0,9)}
@@ -125,7 +125,7 @@ resize();
 let lastT=performance.now(),titleCam=0;
 function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(typeof musicTick==="function")musicTick(dt);
   if(G.state==='play'){try{update(dt)}catch(err){console.error(err)}}else if(G.state==='dialog'){tickDialog(dt);updateMisc(0)}
-  if(G.state==='title'){titleCam+=dt;try{renderTitle(titleCam)}catch(err){console.error(err)}}
+  if(G.state==='title'){titleCam+=dt;if(!$('mCover').naturalWidth)try{renderTitle(titleCam)}catch(err){console.error(err)}}
   else{try{render(dt);if(P&&G.state!=='win')hud()}catch(err){console.error(err)}}
   actQ.clear();requestAnimationFrame(frame)}
 window.__vel={get P(){return P},G,spawn,genItem,dropItem,get enemies(){return enemies}};
